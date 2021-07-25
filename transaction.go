@@ -1,0 +1,81 @@
+package dataquery
+
+import (
+	"context"
+	"errors"
+	"log"
+
+	"github.com/jackc/pgx/v4"
+	"github.com/jmoiron/sqlx"
+)
+
+type Tx struct {
+	tx interface{}
+}
+
+func (t Tx) PgxTx() *pgx.Tx {
+	return t.tx.(*pgx.Tx)
+}
+
+func (t Tx) SqlXTx() *sqlx.Tx {
+	return t.tx.(*sqlx.Tx)
+}
+
+func (t Tx) Rollback() error {
+	switch t.tx.(type) {
+	case *sqlx.Tx:
+		return t.tx.(*sqlx.Tx).Rollback()
+	case pgx.Tx:
+		return t.tx.(pgx.Tx).Rollback(context.Background())
+	}
+	return errors.New("Invalid transaction type")
+}
+
+func (t Tx) Commit() error {
+	switch t.tx.(type) {
+	case *sqlx.Tx:
+		return t.tx.(*sqlx.Tx).Commit()
+	case *pgx.Tx:
+		return t.tx.(pgx.Tx).Commit(context.Background())
+	}
+	return errors.New("Invalid transaction type")
+}
+
+type TransactionFunction func(Tx)
+
+/*
+Transaction Wrapper.
+DB Calls within the transaction should panic on fail.  i.e. use MustExec vs Exec.
+*/
+
+func Transaction(store DataStore, fn TransactionFunction) (err error) {
+	var tx Tx
+	tx, err = store.BeginTransaction()
+	if err != nil {
+		log.Printf("Unable to start transaction: %s\n", err)
+		return err
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				err = errors.New(x)
+			case error:
+				err = x
+			default:
+				err = errors.New("Unknown panic")
+			}
+			txerr := tx.Rollback()
+			if txerr != nil {
+				log.Printf("Unable to rollback from transaction: %s", err)
+			}
+		} else {
+			err = tx.Commit()
+			if err != nil {
+				log.Printf("Unable to commit transaction: %s", err)
+			}
+		}
+	}()
+	fn(tx)
+	return err
+}
