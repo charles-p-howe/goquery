@@ -1,4 +1,4 @@
-module dataquery
+module github.com/usace/dataquery
 
 go 1.16
 
