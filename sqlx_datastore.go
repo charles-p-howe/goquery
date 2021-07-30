@@ -57,8 +57,8 @@ func (sds *SqlDataStore) BeginTransaction() (Tx, error) {
 	return Tx{tx}, err
 }
 
-func (sds *SqlDataStore) GetSlice(ds DataSet, key string, stmt string, suffix string, params []interface{}) (interface{}, error) {
-	sstmt, err := getSelectStatement(ds, key, stmt, suffix)
+func (sds *SqlDataStore) GetSlice(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, panicOnErr bool) (interface{}, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
 	if err != nil {
 		return nil, err
 	}
@@ -68,11 +68,14 @@ func (sds *SqlDataStore) GetSlice(ds DataSet, key string, stmt string, suffix st
 	} else {
 		err = sds.DB.Select(data, sstmt)
 	}
+	if err != nil && panicOnErr {
+		panic(err)
+	}
 	return data, err
 }
 
-func (sds *SqlDataStore) GetRecord(ds DataSet, key string, stmt string, suffix string, params []interface{}) (interface{}, error) {
-	sstmt, err := getSelectStatement(ds, key, stmt, suffix)
+func (sds *SqlDataStore) GetRecord(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, panicOnErr bool) (interface{}, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
 	if err != nil {
 		return nil, err
 	}
@@ -83,14 +86,18 @@ func (sds *SqlDataStore) GetRecord(ds DataSet, key string, stmt string, suffix s
 	} else {
 		err = sds.DB.Get(data, sstmt)
 	}
+	if err != nil && panicOnErr {
+		panic(err)
+	}
 	return data, err
 }
 
-func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix string, params []interface{}, toCamelCase bool, forceArray bool) ([]byte, error) {
-	sstmt, err := getSelectStatement(ds, key, stmt, suffix)
+func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool) ([]byte, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
 	if err != nil {
 		return nil, err
 	}
+	//fmt.Println(sstmt)
 	var rows *sql.Rows
 	if len(params) > 0 && params[0] != nil {
 		rows, err = sds.DB.Query(sstmt, params...)
@@ -100,14 +107,17 @@ func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix str
 	if err != nil {
 		log.Println(err)
 		log.Println(sstmt)
+		if panicOnErr {
+			panic(err)
+		}
 		return nil, err
 	}
 	defer rows.Close()
 	return RowsToJSON(rows, toCamelCase, forceArray)
 }
 
-func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix string, params []interface{}, toCamelCase bool, forceArray bool) (string, error) {
-	sstmt, err := getSelectStatement(ds, key, stmt, suffix)
+func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool) (string, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
 	if err != nil {
 		return "", err
 	}
@@ -182,22 +192,26 @@ func (sds *SqlDataStore) Delete(ds DataSet, id interface{}) error {
 	return err
 }
 
-func getSelectStatement(ds DataSet, key string, stmt string, suffix string) (string, error) {
+func getSelectStatement(ds DataSet, key string, stmt string, suffix string, appends []interface{}) (string, error) {
 	switch {
 	case key != "":
 		if stmt, ok := ds.Commands()[key]; ok {
-			return fmt.Sprintf("%s %s", stmt, suffix), nil
+			stmt := fmt.Sprintf("%s %s", stmt, suffix)
+			return fmt.Sprintf(stmt, appends...), nil
 		}
 		return "", errors.New(fmt.Sprintf("Unable to find statement for %s: %s", ds.Entity(), key))
 	case stmt != "":
-		return fmt.Sprintf("%s %s", stmt, suffix), nil
+		stmt := fmt.Sprintf("%s %s", stmt, suffix)
+		return fmt.Sprintf(stmt, appends...), nil
 	default:
 		if stmt, ok := ds.Commands()[selectkey]; ok {
-			return fmt.Sprintf("%s %s", stmt, suffix), nil
+			stmt := fmt.Sprintf("%s %s", stmt, suffix)
+			return fmt.Sprintf(stmt, appends...), nil
 		} else {
 			stmt = ToSelectStmt(ds)
 			ds.PutCommand(selectkey, stmt)
-			return fmt.Sprintf("%s %s", stmt, suffix), nil
+			stmt = fmt.Sprintf("%s %s", stmt, suffix)
+			return fmt.Sprintf(stmt, appends...), nil
 		}
 	}
 }

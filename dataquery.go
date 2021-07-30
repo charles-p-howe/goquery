@@ -18,19 +18,26 @@ type DataSet interface {
 }
 
 type FluentSelect struct {
-	store        DataStore
-	dataSet      DataSet
-	statementKey string
-	sql          string
-	suffix       string
-	params       []interface{}
-	err          error
-	toCamelCase  bool
-	forceArray   bool
+	store            DataStore
+	dataSet          DataSet
+	statementKey     string
+	statementAppends []interface{}
+	sql              string
+	suffix           string
+	params           []interface{}
+	panicOnErr       bool
+	err              error
+	toCamelCase      bool
+	forceArray       bool
 }
 
 func (s *FluentSelect) StatementKey(key string) *FluentSelect {
 	s.statementKey = key
+	return s
+}
+
+func (s *FluentSelect) Apply(vals ...interface{}) *FluentSelect {
+	s.statementAppends = vals
 	return s
 }
 
@@ -41,6 +48,11 @@ func (s *FluentSelect) CamelCase(useCamelCase bool) *FluentSelect {
 
 func (s *FluentSelect) ForceArray(forceArray bool) *FluentSelect {
 	s.forceArray = forceArray
+	return s
+}
+
+func (s *FluentSelect) PanicOnErr(panicOnErr bool) *FluentSelect {
+	s.panicOnErr = panicOnErr
 	return s
 }
 
@@ -60,21 +72,21 @@ func (s *FluentSelect) Params(params ...interface{}) *FluentSelect {
 }
 
 func (s *FluentSelect) FetchSlice() (interface{}, error) {
-	recs, error := s.store.GetSlice(s.dataSet, s.statementKey, s.sql, s.suffix, s.params)
+	recs, error := s.store.GetSlice(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.panicOnErr)
 	return recs, error
 }
 
 func (s *FluentSelect) FetchRow() (interface{}, error) {
-	recs, error := s.store.GetRecord(s.dataSet, s.statementKey, s.sql, s.suffix, s.params)
+	recs, error := s.store.GetRecord(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.panicOnErr)
 	return recs, error
 }
 
 func (s *FluentSelect) FetchJSON() ([]byte, error) {
-	return s.store.GetJSON(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.toCamelCase, s.forceArray)
+	return s.store.GetJSON(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.toCamelCase, s.forceArray, s.panicOnErr)
 }
 
 func (s *FluentSelect) FetchCSV() (string, error) {
-	return s.store.GetCSV(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.toCamelCase, s.forceArray)
+	return s.store.GetCSV(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.toCamelCase, s.forceArray, s.panicOnErr)
 }
 
 type TableImpl struct {
