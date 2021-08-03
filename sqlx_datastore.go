@@ -92,7 +92,7 @@ func (sds *SqlDataStore) GetRecord(ds DataSet, key string, stmt string, suffix s
 	return data, err
 }
 
-func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool) ([]byte, error) {
+func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string) ([]byte, error) {
 	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
 	if err != nil {
 		return nil, err
@@ -113,10 +113,10 @@ func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix str
 		return nil, err
 	}
 	defer rows.Close()
-	return RowsToJSON(rows, toCamelCase, forceArray)
+	return RowsToJSON(rows, toCamelCase, forceArray, dateFormat)
 }
 
-func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool) (string, error) {
+func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string) (string, error) {
 	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
 	if err != nil {
 		return "", err
@@ -133,7 +133,7 @@ func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix stri
 		return "", err
 	}
 	defer rows.Close()
-	return RowsToCSV(rows, toCamelCase)
+	return RowsToCSV(rows, toCamelCase, dateFormat)
 }
 
 func (sds *SqlDataStore) Select(ds DataSet) *FluentSelect {

@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stoewer/go-strcase"
 )
 
-func RowsToCSV(rows *sql.Rows, toCamelCase bool) (string, error) {
+func RowsToCSV(rows *sql.Rows, toCamelCase bool, dateFormat string) (string, error) {
 	columns, err := rows.Columns()
 	if err != nil {
 		return "", fmt.Errorf("Column error: %v", err)
@@ -62,6 +63,13 @@ func RowsToCSV(rows *sql.Rows, toCamelCase bool) (string, error) {
 				valstring = fmt.Sprintf("%d", reflect.ValueOf(v).Elem().Int())
 			case float32, *float32, float64, *float64:
 				valstring = fmt.Sprintf("%f", reflect.ValueOf(v).Elem().Float())
+			case time.Time, *time.Time:
+				if dateFormat != "" {
+					valstring = reflect.ValueOf(v).Elem().Interface().(time.Time).Format(dateFormat)
+				} else {
+					valstring = reflect.ValueOf(v).Elem().Interface().(time.Time).String()
+				}
+
 			case uuid.UUID:
 				valstring = v.(*uuid.UUID).String()
 			default:

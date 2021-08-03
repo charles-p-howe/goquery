@@ -45,7 +45,7 @@ type TransactionFunction func(Tx)
 
 /*
 Transaction Wrapper.
-DB Calls within the transaction should panic on fail.  i.e. use MustExec vs Exec.
+DB Calls within the transaction should panic on error
 */
 
 func Transaction(store DataStore, fn TransactionFunction) (err error) {

@@ -29,6 +29,7 @@ type FluentSelect struct {
 	err              error
 	toCamelCase      bool
 	forceArray       bool
+	dateFormat       string
 }
 
 func (s *FluentSelect) StatementKey(key string) *FluentSelect {
@@ -43,6 +44,11 @@ func (s *FluentSelect) Apply(vals ...interface{}) *FluentSelect {
 
 func (s *FluentSelect) CamelCase(useCamelCase bool) *FluentSelect {
 	s.toCamelCase = useCamelCase
+	return s
+}
+
+func (s *FluentSelect) DateFormat(dateFormat string) *FluentSelect {
+	s.dateFormat = dateFormat
 	return s
 }
 
@@ -82,11 +88,11 @@ func (s *FluentSelect) FetchRow() (interface{}, error) {
 }
 
 func (s *FluentSelect) FetchJSON() ([]byte, error) {
-	return s.store.GetJSON(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.toCamelCase, s.forceArray, s.panicOnErr)
+	return s.store.GetJSON(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.toCamelCase, s.forceArray, s.panicOnErr, s.dateFormat)
 }
 
 func (s *FluentSelect) FetchCSV() (string, error) {
-	return s.store.GetCSV(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.toCamelCase, s.forceArray, s.panicOnErr)
+	return s.store.GetCSV(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.toCamelCase, s.forceArray, s.panicOnErr, s.dateFormat)
 }
 
 type TableImpl struct {

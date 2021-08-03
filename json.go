@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/stoewer/go-strcase"
 )
@@ -56,11 +57,16 @@ func (v jsonNullFloat64) MarshalJSON() ([]byte, error) {
 
 type jsonNullTime struct {
 	sql.NullTime
+	Fmt string
 }
 
 func (v jsonNullTime) MarshalJSON() ([]byte, error) {
 	if !v.Valid {
 		return json.Marshal(nil)
+	}
+	if v.Fmt != "" {
+		//fmt.Println(v.Time.Format(v.Fmt))
+		return json.Marshal(v.Time.Format(v.Fmt))
 	}
 	return json.Marshal(v.Time)
 }
@@ -85,8 +91,10 @@ var f64 float64
 var f64Type = reflect.TypeOf(f64)
 var str string
 var strType = reflect.TypeOf(str)
+var dte time.Time
+var dateType = reflect.TypeOf(dte)
 
-func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool) ([]byte, error) {
+func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool, dateFormat string) ([]byte, error) {
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("Column error: %v", err)
@@ -112,10 +120,11 @@ func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool) ([]byte, erro
 			types[i] = jsonNullInt64Type
 		case f64Type, nullF64Type:
 			types[i] = jsonNullFloat64Type
-		case nullTimeType:
+		case dateType, nullTimeType:
 			types[i] = jsonNullTimeType
 		default:
 			types[i] = st
+
 		}
 	}
 
@@ -129,7 +138,13 @@ func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool) ([]byte, erro
 		}
 		builder.WriteRune('{')
 		for i := range values {
-			values[i] = reflect.New(types[i]).Interface()
+			nv := reflect.New(types[i]) //.Interface()
+			if types[i] == jsonNullTimeType {
+				if dateFormat != "" {
+					nv.Elem().Field(1).SetString(dateFormat)
+				}
+			}
+			values[i] = nv.Interface()
 		}
 		err = rows.Scan(values...)
 		if err != nil {
