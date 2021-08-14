@@ -1,7 +1,6 @@
 package dataquery
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"reflect"
@@ -12,21 +11,20 @@ import (
 	"github.com/stoewer/go-strcase"
 )
 
-func RowsToCSV(rows *sql.Rows, toCamelCase bool, dateFormat string) (string, error) {
+func RowsToCSV(rows Rows, toCamelCase bool, dateFormat string) (string, error) {
 	columns, err := rows.Columns()
 	if err != nil {
-		return "", fmt.Errorf("Column error: %v", err)
+		return "", fmt.Errorf("column error: %v", err)
 	}
 
 	ct, err := rows.ColumnTypes()
 	if err != nil {
-		return "", fmt.Errorf("Column type error: %v", err)
+		return "", fmt.Errorf("column type error: %v", err)
 	}
 
 	types := make([]reflect.Type, len(ct))
 	for i, tp := range ct {
-		st := tp.ScanType()
-		types[i] = st
+		types[i] = tp
 	}
 
 	values := make([]interface{}, len(ct))

@@ -11,6 +11,38 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+type SqlRows struct {
+	rows *sql.Rows
+}
+
+func (s SqlRows) Columns() ([]string, error) {
+	return s.rows.Columns()
+}
+
+func (s SqlRows) ColumnTypes() ([]reflect.Type, error) {
+	sts, err := s.rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	t := make([]reflect.Type, len(sts))
+	for i, _ := range sts {
+		t[i] = sts[i].ScanType()
+	}
+	return t, nil
+}
+
+func (s SqlRows) Next() bool {
+	return s.rows.Next()
+}
+
+func (s SqlRows) Scan(dest ...interface{}) error {
+	return s.rows.Scan(dest...)
+}
+
+func (s SqlRows) Close() error {
+	return s.rows.Close()
+}
+
 type SqlDataStore struct {
 	DB                *sqlx.DB
 	Config            *RdbmsConfig
@@ -90,7 +122,7 @@ func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix str
 		return nil, err
 	}
 	defer rows.Close()
-	return RowsToJSON(rows, toCamelCase, forceArray, dateFormat, omitNull)
+	return RowsToJSON(SqlRows{rows}, toCamelCase, forceArray, dateFormat, omitNull)
 }
 
 func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string) (string, error) {
@@ -110,7 +142,7 @@ func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix stri
 		return "", err
 	}
 	defer rows.Close()
-	return RowsToCSV(rows, toCamelCase, dateFormat)
+	return RowsToCSV(SqlRows{rows}, toCamelCase, dateFormat)
 }
 
 func (sds *SqlDataStore) Select(ds DataSet) *FluentSelect {

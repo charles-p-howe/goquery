@@ -94,7 +94,7 @@ var strType = reflect.TypeOf(str)
 var dte time.Time
 var dateType = reflect.TypeOf(dte)
 
-func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool, dateFormat string, omitNull bool) ([]byte, error) {
+func RowsToJSON(rows Rows, toCamelCase bool, forceArray bool, dateFormat string, omitNull bool) ([]byte, error) {
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("Column error: %v", err)
@@ -107,11 +107,11 @@ func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool, dateFormat st
 
 	types := make([]reflect.Type, len(tt))
 	for i, tp := range tt {
-		st := tp.ScanType()
-		if st == nil {
+		//st := tp.ScanType()
+		if tp == nil {
 			return nil, fmt.Errorf("Scantype is null for column: %v", err)
 		}
-		switch st {
+		switch tp {
 		case strType, nullStringType:
 			types[i] = jsonNullStringType
 		case i32Type, nullI32Type:
@@ -123,8 +123,7 @@ func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool, dateFormat st
 		case dateType, nullTimeType:
 			types[i] = jsonNullTimeType
 		default:
-			types[i] = st
-
+			types[i] = tp
 		}
 	}
 
@@ -148,7 +147,7 @@ func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool, dateFormat st
 		}
 		err = rows.Scan(values...)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to scan values: %v", err)
+			return nil, fmt.Errorf("failed to scan values: %v", err)
 		}
 		for i, v := range values {
 			jsonb, err := json.Marshal(v)

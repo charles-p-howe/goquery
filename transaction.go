@@ -2,6 +2,7 @@ package dataquery
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 
@@ -21,6 +22,10 @@ func (t Tx) SqlXTx() *sqlx.Tx {
 	return t.tx.(*sqlx.Tx)
 }
 
+func (t Tx) SqlTx() *sql.Tx {
+	return t.tx.(*sql.Tx)
+}
+
 func (t Tx) Rollback() error {
 	switch t.tx.(type) {
 	case *sqlx.Tx:
@@ -28,7 +33,7 @@ func (t Tx) Rollback() error {
 	case pgx.Tx:
 		return t.tx.(pgx.Tx).Rollback(context.Background())
 	}
-	return errors.New("Invalid transaction type")
+	return errors.New("invalid transaction type")
 }
 
 func (t Tx) Commit() error {
@@ -38,7 +43,7 @@ func (t Tx) Commit() error {
 	case *pgx.Tx:
 		return t.tx.(pgx.Tx).Commit(context.Background())
 	}
-	return errors.New("Invalid transaction type")
+	return errors.New("invalid transaction type")
 }
 
 type TransactionFunction func(Tx)
@@ -63,7 +68,7 @@ func Transaction(store DataStore, fn TransactionFunction) (err error) {
 			case error:
 				err = x
 			default:
-				err = errors.New("Unknown panic")
+				err = errors.New("unknown panic")
 			}
 			txerr := tx.Rollback()
 			if txerr != nil {
