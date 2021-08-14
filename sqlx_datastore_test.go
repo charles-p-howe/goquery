@@ -20,6 +20,7 @@ func setup(t *testing.T) DataStore {
 			`insert into fishing_spots (location) values ('Alpine Frove')`,
 			`insert into fishing_spots (location) values ('Rivertown')`,
 			`insert into fishing_spots (location) values ('Pine Island')`,
+			`insert into fishing_spots (location) values (null)`,
 		}
 		for _, v := range inserts {
 			sqltx.MustExec(v)
@@ -60,12 +61,13 @@ func TestConnection(t *testing.T) {
 }
 
 func TestJson(t *testing.T) {
-	correctResult := `[{"id":1,"location":"Alpine Frove"},{"id":2,"location":"Rivertown"},{"id":3,"location":"Pine Island"}]`
+	correctResult := `[{"id":1,"location":"Alpine Frove"},{"id":2,"location":"Rivertown"},{"id":3,"location":"Pine Island"},{"id":4,"location":null}]`
 	store := setup(t)
 	defer teardown(store, t)
 
 	json, err := store.Select(nil).
 		Sql("select * from fishing_spots").
+		OmitNull(false).
 		FetchJSON()
 	if err != nil {
 		t.Errorf("Failed JSON Test: %s\n", err)

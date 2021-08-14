@@ -25,29 +25,6 @@ func NewSqlConnection(config *RdbmsConfig) (*sqlx.DB, error) {
 	return con, err
 }
 
-/*
-func NewSqlDataStore(config *config.AppConfig) (*SqlDataStore, error) {
-	con, err := NewSqlConnection(config)
-	if err != nil {
-		return nil, err
-	}
-	con.SetMaxOpenConns(10)
-	sds := SqlDataStore{
-		DB:     con,
-		Config: config,
-		sequenceTemplate: func(seq string) string {
-			return fmt.Sprintf("nextval('%s')", seq)
-		},
-		bindParamTemplate: func(field string, i int) string {
-			return fmt.Sprintf(":%s", field)
-		},
-	}
-	test := sds.sequenceTemplate("asdfasdf")
-	fmt.Println(test)
-	return &sds, nil
-}
-*/
-
 func (sds *SqlDataStore) Connection() interface{} {
 	return sds.DB
 }
@@ -92,7 +69,7 @@ func (sds *SqlDataStore) GetRecord(ds DataSet, key string, stmt string, suffix s
 	return data, err
 }
 
-func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string) ([]byte, error) {
+func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string, omitNull bool) ([]byte, error) {
 	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
 	if err != nil {
 		return nil, err
@@ -113,7 +90,7 @@ func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix str
 		return nil, err
 	}
 	defer rows.Close()
-	return RowsToJSON(rows, toCamelCase, forceArray, dateFormat)
+	return RowsToJSON(rows, toCamelCase, forceArray, dateFormat, omitNull)
 }
 
 func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string) (string, error) {

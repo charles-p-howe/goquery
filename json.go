@@ -94,7 +94,7 @@ var strType = reflect.TypeOf(str)
 var dte time.Time
 var dateType = reflect.TypeOf(dte)
 
-func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool, dateFormat string) ([]byte, error) {
+func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool, dateFormat string, omitNull bool) ([]byte, error) {
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("Column error: %v", err)
@@ -151,9 +151,13 @@ func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool, dateFormat st
 			return nil, fmt.Errorf("Failed to scan values: %v", err)
 		}
 		for i, v := range values {
-			json, err := json.Marshal(v)
+			jsonb, err := json.Marshal(v)
 			if err != nil {
 				return nil, err
+			}
+			jsons := string(jsonb)
+			if omitNull && jsons == "null" {
+				continue
 			}
 			if i > 0 {
 				builder.WriteRune(',')
@@ -162,7 +166,7 @@ func RowsToJSON(rows *sql.Rows, toCamelCase bool, forceArray bool, dateFormat st
 			if toCamelCase {
 				fieldName = strcase.LowerCamelCase(fieldName)
 			}
-			builder.WriteString(fmt.Sprintf(`"%s":%s`, fieldName, string(json)))
+			builder.WriteString(fmt.Sprintf(`"%s":%s`, fieldName, jsons))
 		}
 		builder.WriteRune('}')
 		count++
