@@ -6,8 +6,9 @@ import (
 )
 
 const selectkey = "select"
-const updatekey = "update"
-const insertkey = "insert"
+
+//const updatekey = "update"
+//const insertkey = "insert"
 
 type DataSet interface {
 	Entity() string
@@ -26,11 +27,11 @@ type FluentSelect struct {
 	suffix           string
 	params           []interface{}
 	panicOnErr       bool
-	err              error
-	toCamelCase      bool
-	forceArray       bool
-	dateFormat       string
-	omitNull         bool
+	//err              error
+	toCamelCase bool
+	forceArray  bool
+	dateFormat  string
+	omitNull    bool
 }
 
 func (s *FluentSelect) StatementKey(key string) *FluentSelect {

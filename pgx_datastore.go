@@ -107,11 +107,6 @@ func (pgs *PgDataStore) GetSlice(ds DataSet, key string, stmt string, suffix str
 		panic(err)
 	}
 	return data, err
-	if err != nil {
-		panic(err)
-	}
-
-	return data, err
 }
 
 func (pgs *PgDataStore) GetRecord(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, panicOnErr bool) (interface{}, error) {

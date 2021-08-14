@@ -25,7 +25,7 @@ func (s SqlRows) ColumnTypes() ([]reflect.Type, error) {
 		return nil, err
 	}
 	t := make([]reflect.Type, len(sts))
-	for i, _ := range sts {
+	for i := range sts {
 		t[i] = sts[i].ScanType()
 	}
 	return t, nil
@@ -208,7 +208,7 @@ func getSelectStatement(ds DataSet, key string, stmt string, suffix string, appe
 			stmt := fmt.Sprintf("%s %s", stmt, suffix)
 			return fmt.Sprintf(stmt, appends...), nil
 		}
-		return "", errors.New(fmt.Sprintf("Unable to find statement for %s: %s", ds.Entity(), key))
+		return "", fmt.Errorf("unable to find statement for %s: %s", ds.Entity(), key)
 	case stmt != "":
 		stmt := fmt.Sprintf("%s %s", stmt, suffix)
 		return fmt.Sprintf(stmt, appends...), nil
@@ -264,7 +264,7 @@ func ToInsert(ds DataSet, seqTemplate SequenceTemplateFunction, bindTemplate Bin
 						bindBuilder.WriteString(seqTemplate(idsequence))
 						fieldcount++
 					} else {
-						return "", errors.New("Invalid id.  Sequence type must have an 'idsequence' tag")
+						return "", errors.New("invalid id.  sequence type must have an 'idsequence' tag")
 					}
 				}
 			} else {

@@ -1,7 +1,6 @@
 package dataquery
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -47,7 +46,7 @@ func RowsToCSV(rows Rows, toCamelCase bool, dateFormat string) (string, error) {
 		}
 		err = rows.Scan(values...)
 		if err != nil {
-			return "", fmt.Errorf("Failed to scan values: %v", err)
+			return "", fmt.Errorf("failed to scan values: %v", err)
 		}
 		for i, v := range values {
 			if i > 0 {
@@ -71,7 +70,7 @@ func RowsToCSV(rows Rows, toCamelCase bool, dateFormat string) (string, error) {
 			case uuid.UUID:
 				valstring = v.(*uuid.UUID).String()
 			default:
-				return "", errors.New(fmt.Sprintf("Unsupported CSV conversion type: %v", reflect.ValueOf(v).Elem().Type()))
+				return "", fmt.Errorf("unsupported csv conversion type: %v", reflect.ValueOf(v).Elem().Type())
 			}
 
 			builder.WriteString(fmt.Sprintf("%v", valstring))
