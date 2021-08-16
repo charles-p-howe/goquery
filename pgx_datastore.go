@@ -19,8 +19,8 @@ type PgxRows struct {
 func (p PgxRows) Columns() ([]string, error) {
 	metadata := p.rows.FieldDescriptions()
 	columns := make([]string, len(metadata))
-	for _, f := range metadata {
-		columns = append(columns, string(f.Name))
+	for i, f := range metadata {
+		columns[i] = string(f.Name)
 	}
 	return columns, nil
 }
@@ -60,7 +60,7 @@ func (p PgxRows) Next() bool {
 }
 
 func (p PgxRows) Scan(dest ...interface{}) error {
-	return p.rows.Scan(dest)
+	return p.rows.Scan(dest...)
 }
 
 func (p PgxRows) Close() error {

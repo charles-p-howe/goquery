@@ -14,8 +14,8 @@ type Tx struct {
 	tx interface{}
 }
 
-func (t Tx) PgxTx() *pgx.Tx {
-	return t.tx.(*pgx.Tx)
+func (t Tx) PgxTx() pgx.Tx {
+	return t.tx.(pgx.Tx)
 }
 
 func (t Tx) SqlXTx() *sqlx.Tx {
@@ -40,7 +40,7 @@ func (t Tx) Commit() error {
 	switch t.tx.(type) {
 	case *sqlx.Tx:
 		return t.tx.(*sqlx.Tx).Commit()
-	case *pgx.Tx:
+	case pgx.Tx:
 		return t.tx.(pgx.Tx).Commit(context.Background())
 	}
 	return errors.New("invalid transaction type")
