@@ -44,16 +44,12 @@ func sqlxteardown(store DataStore, t *testing.T) {
 
 func getSqlxStore(t *testing.T) DataStore {
 	config := RdbmsConfigFromEnv()
-	db, err := NewSqlConnection(config)
+	db, err := NewSqlxConnection(config)
 	if err != nil {
 		t.Errorf("Failed to connect to store:%s\n", err)
 	}
-	return &SqlDataStore{
-		DB:                db,
-		Config:            config,
-		SequenceTemplate:  nil,
-		BindParamTemplate: nil,
-	}
+	store := SqlDataStore{&db}
+	return &store
 }
 
 func TestSqlxConnection(t *testing.T) {

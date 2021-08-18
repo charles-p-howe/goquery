@@ -1,6 +1,8 @@
 package dataquery
 
-import "reflect"
+import (
+	"reflect"
+)
 
 type Rows interface {
 	Columns() ([]string, error)

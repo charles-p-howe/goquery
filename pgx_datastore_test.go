@@ -58,12 +58,8 @@ func getPgxStore(t *testing.T) DataStore {
 	if err != nil {
 		t.Errorf("Failed to connect to store:%s\n", err)
 	}
-	return &PgDataStore{
-		DB:                db,
-		Config:            config,
-		SequenceTemplate:  nil,
-		BindParamTemplate: nil,
-	}
+	store := SqlDataStore{&db}
+	return &store
 }
 
 func TestPgxConnection(t *testing.T) {

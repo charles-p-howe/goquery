@@ -1,0 +1,275 @@
+package dataquery
+
+import (
+	"log"
+	"reflect"
+)
+
+type SqlDb interface {
+	Connection() interface{}
+	Select(dest interface{}, stmt string, params ...interface{}) error
+	Get(dest interface{}, stmt string, params ...interface{}) error
+	Query(stmt string, params ...interface{}) (Rows, error)
+	BeginTransaction() (Tx, error)
+}
+
+type SqlDataStore struct {
+	db SqlDb //db connection
+	//Config *RdbmsConfig
+}
+
+func (sds *SqlDataStore) Connection() interface{} {
+	return sds.db.Connection()
+}
+
+func (sds *SqlDataStore) BeginTransaction() (Tx, error) {
+	return sds.db.BeginTransaction()
+}
+
+func (sds *SqlDataStore) GetSlice(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, panicOnErr bool) (interface{}, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+	if err != nil {
+		return nil, err
+	}
+	data := ds.FieldSlice()
+	if len(params) > 0 && params[0] != nil {
+		err = sds.db.Select(data, sstmt, params...)
+	} else {
+		err = sds.db.Select(data, sstmt)
+	}
+	if err != nil && panicOnErr {
+		panic(err)
+	}
+	return data, err
+}
+
+func (sds *SqlDataStore) GetRecord(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, panicOnErr bool) (interface{}, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+	if err != nil {
+		return nil, err
+	}
+	typ := reflect.TypeOf(ds.Attributes())
+	data := reflect.New(typ).Interface()
+	if len(params) > 0 && params[0] != nil {
+		err = sds.db.Get(data, sstmt, params...)
+	} else {
+		err = sds.db.Get(data, sstmt)
+	}
+	if err != nil && panicOnErr {
+		panic(err)
+	}
+	return data, err
+}
+
+func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string, omitNull bool) ([]byte, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+	if err != nil {
+		return nil, err
+	}
+	//fmt.Println(sstmt)
+	var rows Rows
+	if len(params) > 0 && params[0] != nil {
+		rows, err = sds.db.Query(sstmt, params...)
+	} else {
+		rows, err = sds.db.Query(sstmt)
+	}
+	if err != nil {
+		log.Println(err)
+		log.Println(sstmt)
+		if panicOnErr {
+			panic(err)
+		}
+		return nil, err
+	}
+	defer rows.Close()
+	return RowsToJSON(rows, toCamelCase, forceArray, dateFormat, omitNull)
+}
+
+func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string) (string, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+	if err != nil {
+		return "", err
+	}
+	var rows Rows
+	if len(params) > 0 && params[0] != nil {
+		rows, err = sds.db.Query(sstmt, params...)
+	} else {
+		rows, err = sds.db.Query(sstmt)
+	}
+	if err != nil {
+		log.Println(err)
+		log.Println(sstmt)
+		return "", err
+	}
+	defer rows.Close()
+	return RowsToCSV(rows, toCamelCase, dateFormat)
+}
+
+func (sds *SqlDataStore) Select(ds DataSet) *FluentSelect {
+	s := FluentSelect{
+		dataSet: ds,
+		store:   sds,
+	}
+	s.CamelCase(true)
+	return &s
+}
+
+/*
+type SqlxDataStore struct {
+	DB                *sqlx.DB
+	Config            *RdbmsConfig
+	SequenceTemplate  SequenceTemplateFunction
+	BindParamTemplate BindParamTemplateFunction
+}
+
+func NewSqlxConnection(config *RdbmsConfig) (*sqlx.DB, error) {
+	dburl := fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=disable",
+		config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname)
+	con, err := sqlx.Connect("pgx", dburl)
+	return con, err
+}
+
+func (sds *SqlxDataStore) Connection() interface{} {
+	return sds.DB
+}
+
+func (sds *SqlxDataStore) BeginTransaction() (Tx, error) {
+	tx, err := sds.DB.Beginx()
+	return Tx{tx}, err
+}
+
+func (sds *SqlxDataStore) GetSlice(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, panicOnErr bool) (interface{}, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+	if err != nil {
+		return nil, err
+	}
+	data := ds.FieldSlice()
+	if len(params) > 0 && params[0] != nil {
+		err = sds.DB.Select(data, sstmt, params...)
+	} else {
+		err = sds.DB.Select(data, sstmt)
+	}
+	if err != nil && panicOnErr {
+		panic(err)
+	}
+	return data, err
+}
+
+func (sds *SqlxDataStore) GetRecord(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, panicOnErr bool) (interface{}, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+	if err != nil {
+		return nil, err
+	}
+	typ := reflect.TypeOf(ds.Attributes())
+	data := reflect.New(typ).Interface()
+	if len(params) > 0 && params[0] != nil {
+		err = sds.DB.Get(data, sstmt, params...)
+	} else {
+		err = sds.DB.Get(data, sstmt)
+	}
+	if err != nil && panicOnErr {
+		panic(err)
+	}
+	return data, err
+}
+
+func (sds *SqlxDataStore) GetJSON(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string, omitNull bool) ([]byte, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+	if err != nil {
+		return nil, err
+	}
+	//fmt.Println(sstmt)
+	var rows *sql.Rows
+	if len(params) > 0 && params[0] != nil {
+		rows, err = sds.DB.Query(sstmt, params...)
+	} else {
+		rows, err = sds.DB.Query(sstmt)
+	}
+	if err != nil {
+		log.Println(err)
+		log.Println(sstmt)
+		if panicOnErr {
+			panic(err)
+		}
+		return nil, err
+	}
+	defer rows.Close()
+	return RowsToJSON(SqlRows{rows}, toCamelCase, forceArray, dateFormat, omitNull)
+}
+
+func (sds *SqlxDataStore) GetCSV(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string) (string, error) {
+	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+	if err != nil {
+		return "", err
+	}
+	var rows *sql.Rows
+	if len(params) > 0 && params[0] != nil {
+		rows, err = sds.DB.Query(sstmt, params...)
+	} else {
+		rows, err = sds.DB.Query(sstmt)
+	}
+	if err != nil {
+		log.Println(err)
+		log.Println(sstmt)
+		return "", err
+	}
+	defer rows.Close()
+	return RowsToCSV(SqlRows{rows}, toCamelCase, dateFormat)
+}
+
+func (sds *SqlxDataStore) Select(ds DataSet) *FluentSelect {
+	s := FluentSelect{
+		dataSet: ds,
+		store:   sds,
+	}
+	s.CamelCase(true)
+	return &s
+}
+
+func (sds *SqlxDataStore) Insert(ds DataSet, val interface{}, retval interface{}, tx *sqlx.Tx) error {
+	var err error
+	if retval != nil {
+		stmt, err := ToInsert(ds, sds.SequenceTemplate, func(field string, i int) string { return fmt.Sprintf("$%d", i) })
+		if err != nil {
+			return err
+		}
+		stmt = stmt + " returning id"
+		fmt.Println(stmt)
+		if tx == nil {
+			err = sds.DB.Get(retval, stmt, ValsAsInterfaceArray2(val, []string{"ID"}, "db", []string{"_"})...)
+		} else {
+			err = tx.Get(retval, stmt, ValsAsInterfaceArray2(val, []string{"ID"}, "db", []string{"_"})...)
+		}
+		if err != nil {
+			return err
+		}
+	} else {
+		stmt, err := ToInsert(ds, sds.SequenceTemplate, sds.BindParamTemplate)
+		if err != nil {
+			return err
+		}
+		fmt.Println(stmt)
+		_, err = sds.DB.NamedExec(stmt, val)
+		if err != nil {
+			return err
+		}
+	}
+	//@TODO this error is getting shadowed by the inner error...need to fix
+	return err
+}
+
+func (sds *SqlxDataStore) Update(ds DataSet, val interface{}) error {
+	stmt := ToUpdate(ds, sds.BindParamTemplate)
+	fmt.Println(stmt)
+	_, err := sds.DB.NamedExec(stmt, val)
+	return err
+}
+
+func (sds *SqlxDataStore) Delete(ds DataSet, id interface{}) error {
+	template := "delete from %s where %s = $1"
+	idfield := IdField(ds)
+	stmt := fmt.Sprintf(template, ds.Entity(), idfield)
+	_, err := sds.DB.Exec(stmt, id)
+	return err
+}
+*/
