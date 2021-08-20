@@ -58,7 +58,8 @@ func TagAsStringArray(tag string, data interface{}) []string {
 	return tags
 }
 
-func ValsAsInterfaceArray(data interface{}, excludeFields []string) []interface{} {
+/*
+func StructToInterfaceArray(data interface{}, excludeFields []string) []interface{} {
 	val := reflect.ValueOf(data).Elem()
 	valtype := reflect.TypeOf(data).Elem()
 	fieldNum := val.NumField()
@@ -74,8 +75,23 @@ func ValsAsInterfaceArray(data interface{}, excludeFields []string) []interface{
 	}
 	return ia
 }
+*/
 
-func ValsAsInterfaceArray2(data interface{}, excludeFields []string, tagField string, excludeTags []string) []interface{} {
+func StructToIArray(data interface{}) []interface{} {
+	rval := reflect.ValueOf(data)
+	val := reflect.Indirect(rval)
+	if val.Kind() == reflect.Slice {
+		val = val.Elem()
+	}
+	fieldNum := val.NumField()
+	ia := make([]interface{}, fieldNum)
+	for i := 0; i < fieldNum; i++ {
+		ia[i] = reflect.Indirect(val.Field(i)).Interface()
+	}
+	return ia
+}
+
+func StructToIArrayEx(data interface{}, excludeFields []string, tagField string, excludeTags []string) []interface{} {
 	val := reflect.ValueOf(data).Elem()
 	valtype := reflect.TypeOf(data).Elem()
 	fieldNum := val.NumField()

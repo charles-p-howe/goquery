@@ -5,25 +5,18 @@ import (
 	"reflect"
 )
 
-type SqlDb interface {
-	Connection() interface{}
-	Select(dest interface{}, stmt string, params ...interface{}) error
-	Get(dest interface{}, stmt string, params ...interface{}) error
-	Query(stmt string, params ...interface{}) (Rows, error)
-	BeginTransaction() (Tx, error)
-}
-
+//implements the datastore interface
 type SqlDataStore struct {
-	db SqlDb //db connection
-	//Config *RdbmsConfig
+	db      SqlDb
+	dialect DbDialect
 }
 
 func (sds *SqlDataStore) Connection() interface{} {
 	return sds.db.Connection()
 }
 
-func (sds *SqlDataStore) BeginTransaction() (Tx, error) {
-	return sds.db.BeginTransaction()
+func (sds *SqlDataStore) Transaction() (Tx, error) {
+	return sds.db.Transaction()
 }
 
 func (sds *SqlDataStore) GetSlice(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, panicOnErr bool) (interface{}, error) {
@@ -105,6 +98,97 @@ func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix stri
 	return RowsToCSV(rows, toCamelCase, dateFormat)
 }
 
+func (sds *SqlDataStore) InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error {
+	rval := reflect.ValueOf(recs)
+	rrecs := reflect.Indirect(rval)
+	if rval.Kind() == reflect.Slice {
+		if tx == nil {
+			err := Transaction(sds, func(tx Tx) {
+				for i := 0; i < rrecs.Len(); i++ {
+					err := sds.db.Insert(ds, rrecs.Index(i).Interface(), &tx)
+					if err != nil {
+						panic(err)
+					}
+				}
+			})
+			return err
+		} else {
+			for i := 0; i < rrecs.Len(); i++ {
+				err := sds.db.Insert(ds, rrecs.Index(i).Interface(), tx)
+				if err != nil {
+					log.Printf("Failed to insert: %s\n", err)
+					return err
+				}
+			}
+		}
+	} else {
+		return sds.db.Insert(ds, recs, tx)
+	}
+	return nil
+}
+
+/*
+func (sds *SqlDataStore) Insert(ds DataSet, val interface{}, retval interface{}, tx *sqlx.Tx) error {
+	var err error
+	if retval != nil {
+		stmt, err := ToInsert(ds, sds.SequenceTemplate, func(field string, i int) string { return fmt.Sprintf("$%d", i) })
+		if err != nil {
+			return err
+		}
+		stmt = stmt + " returning id"
+		fmt.Println(stmt)
+		if tx == nil {
+			err = sds.DB.Get(retval, stmt, ValsAsInterfaceArray2(val, []string{"ID"}, "db", []string{"_"})...)
+		} else {
+			err = tx.Get(retval, stmt, ValsAsInterfaceArray2(val, []string{"ID"}, "db", []string{"_"})...)
+		}
+		if err != nil {
+			return err
+		}
+	} else {
+		stmt, err := ToInsert(ds, sds.SequenceTemplate, sds.BindParamTemplate)
+		if err != nil {
+			return err
+		}
+		_, err = sds.DB.NamedExec(stmt, val)
+		fmt.Println(err)
+	}
+	//@TODO this error is getting shadowed by the inner error...need to fix
+	return err
+}
+*/
+
+/*
+func (sds *SqlDataStore) insertRec(rec interface{}, retval interface{}) error {
+	var err error
+	if retval != nil {
+		stmt, err := ToInsert(ds, sds.SequenceTemplate, func(field string, i int) string { return fmt.Sprintf("$%d", i) })
+		if err != nil {
+			return err
+		}
+		stmt = stmt + " returning id"
+		fmt.Println(stmt)
+		if tx == nil {
+			err = sds.DB.Get(retval, stmt, ValsAsInterfaceArray2(val, []string{"ID"}, "db", []string{"_"})...)
+		} else {
+			err = tx.Get(retval, stmt, ValsAsInterfaceArray2(val, []string{"ID"}, "db", []string{"_"})...)
+		}
+		if err != nil {
+			return err
+		}
+	} else {
+		stmt, err := ToInsert(ds, sds.SequenceTemplate, sds.BindParamTemplate)
+		if err != nil {
+			return err
+		}
+		_, err = sds.DB.NamedExec(stmt, val)
+		fmt.Println(err)
+	}
+	//@TODO this error is getting shadowed by the inner error...need to fix
+	return err
+}
+*/
+
 func (sds *SqlDataStore) Select(ds DataSet) *FluentSelect {
 	s := FluentSelect{
 		dataSet: ds,
@@ -112,6 +196,14 @@ func (sds *SqlDataStore) Select(ds DataSet) *FluentSelect {
 	}
 	s.CamelCase(true)
 	return &s
+}
+
+func (sds *SqlDataStore) Insert(ds DataSet) *FluentInsert {
+	fi := FluentInsert{
+		ds:    ds,
+		store: sds,
+	}
+	return &fi
 }
 
 /*

@@ -55,7 +55,7 @@ DB Calls within the transaction should panic on error
 
 func Transaction(store DataStore, fn TransactionFunction) (err error) {
 	var tx Tx
-	tx, err = store.BeginTransaction()
+	tx, err = store.Transaction()
 	if err != nil {
 		log.Printf("Unable to start transaction: %s\n", err)
 		return err

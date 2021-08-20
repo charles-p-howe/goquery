@@ -44,7 +44,7 @@ func ToSelectStmt(ds DataSet) string {
 	return fieldsBuilder.String()
 }
 
-func ToInsert(ds DataSet, seqTemplate SequenceTemplateFunction, bindTemplate BindParamTemplateFunction) (string, error) {
+func ToInsert(ds DataSet, dialect DbDialect) (string, error) {
 	var fieldBuilder strings.Builder
 	var bindBuilder strings.Builder
 	typ := reflect.TypeOf(ds.Attributes())
@@ -60,7 +60,7 @@ func ToInsert(ds DataSet, seqTemplate SequenceTemplateFunction, bindTemplate Bin
 				if idtype != "AUTOINCREMENT" {
 					if idsequence, ok := typ.Field(i).Tag.Lookup("idsequence"); ok {
 						fieldBuilder.WriteString(dbfield)
-						bindBuilder.WriteString(seqTemplate(idsequence))
+						bindBuilder.WriteString(dialect.Seq(idsequence))
 						fieldcount++
 					} else {
 						return "", errors.New("invalid id.  sequence type must have an 'idsequence' tag")
@@ -68,7 +68,7 @@ func ToInsert(ds DataSet, seqTemplate SequenceTemplateFunction, bindTemplate Bin
 				}
 			} else {
 				fieldBuilder.WriteString(dbfield)
-				bindBuilder.WriteString(bindTemplate(dbfield, fieldcount))
+				bindBuilder.WriteString(dialect.Bind(dbfield, fieldcount))
 				fieldcount++
 			}
 		}
