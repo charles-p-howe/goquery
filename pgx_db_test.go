@@ -6,6 +6,11 @@ import (
 	"testing"
 )
 
+type FishingSpot struct {
+	ID       int32   `db:"id"`
+	Location *string `db:"location"`
+}
+
 func pgxsetup(t *testing.T) DataStore {
 	ctx := context.Background()
 	store := getPgxStore(t)
@@ -73,8 +78,8 @@ func TestPgxJson(t *testing.T) {
 	store := pgxsetup(t)
 	defer pgxteardown(store, t)
 
-	json, err := store.Select(nil).
-		Sql("select * from fishing_spots").
+	json, err := store.
+		Select("select * from fishing_spots").
 		OmitNull(false).
 		FetchJSON()
 	if err != nil {
@@ -105,13 +110,14 @@ func TestPgxSlice(t *testing.T) {
 		Fields: FishingSpot{},
 	}
 
-	res, err := store.Select(&fsTbl).FetchSlice()
+	dest := &[]FishingSpot{}
+	err := store.Select().DataSet(&fsTbl).Dest(dest).Fetch()
 	if err != nil {
 		t.Errorf("Failed Slice Test:%s\n", err)
 	}
 
-	if reflect.DeepEqual(res, correctResult) {
-		t.Errorf("Failed Slice Test: Got %v want %v", res, correctResult)
+	if reflect.DeepEqual(dest, correctResult) {
+		t.Errorf("Failed Slice Test: Got %v want %v", dest, correctResult)
 	}
 
 	/////////////////add select statement///////////
@@ -120,16 +126,19 @@ func TestPgxSlice(t *testing.T) {
 	}
 
 	fsTbl.Statements = stmts
-	res, err = store.Select(&fsTbl).
+	dest = &[]FishingSpot{}
+	err = store.Select().
+		DataSet(&fsTbl).
 		StatementKey("named-select").
-		FetchSlice()
+		Dest(dest).
+		Fetch()
 
 	if err != nil {
 		t.Errorf("Failed Slice Test:%s\n", err)
 	}
 
-	if reflect.DeepEqual(res, correctResult) {
-		t.Errorf("Failed Slice Test: Got %v want %v", res, correctResult)
+	if reflect.DeepEqual(dest, correctResult) {
+		t.Errorf("Failed Slice Test: Got %v want %v", dest, correctResult)
 	}
 
 }

@@ -67,6 +67,17 @@ func (p PgxRows) Close() error {
 	return nil
 }
 
+/*
+type PgxBatch struct {
+	BatchSize int
+	batch     *pgx.Batch
+}
+
+func(pb *PgxBatch) Queue(stmt string, params ...interface{}){
+	pb.batch.Queue(stmt,params)
+}
+*/
+
 type PgxDb struct {
 	db      *pgx.Conn
 	dialect DbDialect
@@ -94,6 +105,16 @@ func (pdb *PgxDb) Get(dest interface{}, stmt string, params ...interface{}) erro
 func (pdb *PgxDb) Query(stmt string, params ...interface{}) (Rows, error) {
 	rows, err := pdb.db.Query(context.Background(), stmt, params...)
 	return PgxRows{rows}, err
+}
+
+func (pdb *PgxDb) Batch() Batch {
+	return &pgx.Batch{}
+}
+
+func (pdb *PgxDb) SendBatch(batch Batch) BatchResult {
+	pb := batch.(*pgx.Batch)
+	br := pdb.db.SendBatch(context.Background(), pb)
+	return br
 }
 
 func (pdb *PgxDb) Insert(ds DataSet, rec interface{}, tx *Tx) error {

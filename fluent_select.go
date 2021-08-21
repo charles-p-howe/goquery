@@ -1,28 +1,32 @@
 package dataquery
 
 type FluentSelect struct {
-	store            DataStore
-	dataSet          DataSet
-	statementKey     string
-	statementAppends []interface{}
-	sql              string
-	suffix           string
-	params           []interface{}
-	panicOnErr       bool
-	//err              error
+	store       DataStore
+	qi          QueryInput
+	dest        interface{}
 	toCamelCase bool
 	forceArray  bool
 	dateFormat  string
 	omitNull    bool
 }
 
+func (s *FluentSelect) DataSet(ds DataSet) *FluentSelect {
+	s.qi.DataSet = ds
+	return s
+}
+
 func (s *FluentSelect) StatementKey(key string) *FluentSelect {
-	s.statementKey = key
+	s.qi.StatementKey = key
 	return s
 }
 
 func (s *FluentSelect) Apply(vals ...interface{}) *FluentSelect {
-	s.statementAppends = vals
+	s.qi.StmtAppends = vals
+	return s
+}
+
+func (s *FluentSelect) Dest(dest interface{}) *FluentSelect {
+	s.dest = dest
 	return s
 }
 
@@ -47,39 +51,40 @@ func (s *FluentSelect) ForceArray(forceArray bool) *FluentSelect {
 }
 
 func (s *FluentSelect) PanicOnErr(panicOnErr bool) *FluentSelect {
-	s.panicOnErr = panicOnErr
-	return s
-}
-
-func (s *FluentSelect) Sql(stmt string) *FluentSelect {
-	s.sql = stmt
+	s.qi.PanicOnErr = panicOnErr
 	return s
 }
 
 func (s *FluentSelect) Suffix(suffix string) *FluentSelect {
-	s.suffix = suffix
+	s.qi.Suffix = suffix
 	return s
 }
 
 func (s *FluentSelect) Params(params ...interface{}) *FluentSelect {
-	s.params = params
+	s.qi.BindParams = params
 	return s
 }
 
-func (s *FluentSelect) FetchSlice() (interface{}, error) {
-	recs, error := s.store.GetSlice(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.panicOnErr)
-	return recs, error
-}
-
-func (s *FluentSelect) FetchRow() (interface{}, error) {
-	recs, error := s.store.GetRecord(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.panicOnErr)
-	return recs, error
+func (s *FluentSelect) Fetch() error {
+	error := s.store.Fetch(s.qi, s.dest)
+	return error
 }
 
 func (s *FluentSelect) FetchJSON() ([]byte, error) {
-	return s.store.GetJSON(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.toCamelCase, s.forceArray, s.panicOnErr, s.dateFormat, s.omitNull)
+	s.qi.JsonOpts = &JsonOpts{
+		ToCamelCase: s.toCamelCase,
+		OmitNull:    s.omitNull,
+		ForceArray:  s.forceArray,
+		DateFormat:  s.dateFormat,
+	}
+	return s.store.GetJSON(s.qi)
 }
 
 func (s *FluentSelect) FetchCSV() (string, error) {
-	return s.store.GetCSV(s.dataSet, s.statementKey, s.sql, s.suffix, s.params, s.statementAppends, s.toCamelCase, s.forceArray, s.panicOnErr, s.dateFormat)
+	s.qi.CsvOpts = &CsvOpts{
+		ToCamelCase: s.toCamelCase,
+		DateFormat:  s.dateFormat,
+		PrintHeader: true,
+	}
+	return s.store.GetCSV(s.qi)
 }

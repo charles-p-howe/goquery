@@ -19,73 +19,55 @@ func (sds *SqlDataStore) Transaction() (Tx, error) {
 	return sds.db.Transaction()
 }
 
-func (sds *SqlDataStore) GetSlice(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, panicOnErr bool) (interface{}, error) {
-	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+func (sds *SqlDataStore) Fetch(qi QueryInput, dest interface{}) error {
+	sstmt, err := getSelectStatement(qi.DataSet, qi.StatementKey, qi.Statement, qi.Suffix, qi.StmtAppends)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	data := ds.FieldSlice()
-	if len(params) > 0 && params[0] != nil {
-		err = sds.db.Select(data, sstmt, params...)
+	if len(qi.BindParams) > 0 && qi.BindParams[0] != nil {
+		err = sds.db.Select(dest, sstmt, qi.BindParams...)
 	} else {
-		err = sds.db.Select(data, sstmt)
+		err = sds.db.Select(dest, sstmt)
 	}
-	if err != nil && panicOnErr {
+	if err != nil && qi.PanicOnErr {
 		panic(err)
 	}
-	return data, err
+	return err
 }
 
-func (sds *SqlDataStore) GetRecord(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, panicOnErr bool) (interface{}, error) {
-	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+func (sds *SqlDataStore) GetJSON(qi QueryInput) ([]byte, error) {
+	sstmt, err := getSelectStatement(qi.DataSet, qi.StatementKey, qi.Statement, qi.Suffix, qi.StmtAppends)
 	if err != nil {
 		return nil, err
 	}
-	typ := reflect.TypeOf(ds.Attributes())
-	data := reflect.New(typ).Interface()
-	if len(params) > 0 && params[0] != nil {
-		err = sds.db.Get(data, sstmt, params...)
-	} else {
-		err = sds.db.Get(data, sstmt)
-	}
-	if err != nil && panicOnErr {
-		panic(err)
-	}
-	return data, err
-}
 
-func (sds *SqlDataStore) GetJSON(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string, omitNull bool) ([]byte, error) {
-	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
-	if err != nil {
-		return nil, err
-	}
-	//fmt.Println(sstmt)
 	var rows Rows
-	if len(params) > 0 && params[0] != nil {
-		rows, err = sds.db.Query(sstmt, params...)
+	if len(qi.BindParams) > 0 && qi.BindParams[0] != nil {
+		rows, err = sds.db.Query(sstmt, qi.BindParams...)
 	} else {
 		rows, err = sds.db.Query(sstmt)
 	}
 	if err != nil {
 		log.Println(err)
 		log.Println(sstmt)
-		if panicOnErr {
+		if qi.PanicOnErr {
 			panic(err)
 		}
 		return nil, err
 	}
 	defer rows.Close()
-	return RowsToJSON(rows, toCamelCase, forceArray, dateFormat, omitNull)
+	return RowsToJSON(rows, qi.JsonOpts.ToCamelCase, qi.JsonOpts.ForceArray, qi.JsonOpts.DateFormat, qi.JsonOpts.OmitNull)
 }
 
-func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string) (string, error) {
-	sstmt, err := getSelectStatement(ds, key, stmt, suffix, appends)
+//ds DataSet, key string, stmt string, suffix string, params []interface{}, appends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string
+func (sds *SqlDataStore) GetCSV(qi QueryInput) (string, error) {
+	sstmt, err := getSelectStatement(qi.DataSet, qi.StatementKey, qi.Statement, qi.Suffix, qi.StmtAppends)
 	if err != nil {
 		return "", err
 	}
 	var rows Rows
-	if len(params) > 0 && params[0] != nil {
-		rows, err = sds.db.Query(sstmt, params...)
+	if len(qi.BindParams) > 0 && qi.BindParams[0] != nil {
+		rows, err = sds.db.Query(sstmt, qi.BindParams...)
 	} else {
 		rows, err = sds.db.Query(sstmt)
 	}
@@ -95,7 +77,7 @@ func (sds *SqlDataStore) GetCSV(ds DataSet, key string, stmt string, suffix stri
 		return "", err
 	}
 	defer rows.Close()
-	return RowsToCSV(rows, toCamelCase, dateFormat)
+	return RowsToCSV(rows, qi.CsvOpts.ToCamelCase, qi.CsvOpts.DateFormat)
 }
 
 func (sds *SqlDataStore) InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error {
@@ -189,14 +171,33 @@ func (sds *SqlDataStore) insertRec(rec interface{}, retval interface{}) error {
 }
 */
 
-func (sds *SqlDataStore) Select(ds DataSet) *FluentSelect {
+func (sds *SqlDataStore) Select(stmt ...string) *FluentSelect {
+	stmts := ""
+	if len(stmt) > 0 && stmt[0] != "" {
+		stmts = stmt[0]
+	}
 	s := FluentSelect{
-		dataSet: ds,
-		store:   sds,
+		qi: QueryInput{
+			Statement: stmts,
+		},
+		store: sds,
 	}
 	s.CamelCase(true)
 	return &s
 }
+
+/*
+func (sds *SqlDataStore) Select(ds DataSet) *FluentSelect {
+	s := FluentSelect{
+		qi: QueryInput{
+			DataSet: ds,
+		},
+		store: sds,
+	}
+	s.CamelCase(true)
+	return &s
+}
+*/
 
 func (sds *SqlDataStore) Insert(ds DataSet) *FluentInsert {
 	fi := FluentInsert{

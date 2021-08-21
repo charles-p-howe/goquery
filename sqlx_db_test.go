@@ -1,12 +1,10 @@
 package dataquery
 
 import (
-	"reflect"
-	"testing"
-
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
+/*
 func sqlxsetup(t *testing.T) DataStore {
 	store := getSqlxStore(t)
 	err := Transaction(store, func(tx Tx) {
@@ -148,3 +146,4 @@ func TestSqlxSlice(t *testing.T) {
 	}
 
 }
+*/

@@ -11,18 +11,51 @@ type DbDialect struct {
 	Seq             SequenceTemplateFunction
 }
 
+type QueryInput struct {
+	DataSet      DataSet
+	StatementKey string
+	Statement    string
+	Suffix       string
+	BindParams   []interface{}
+	StmtAppends  []interface{}
+	PanicOnErr   bool
+	JsonOpts     *JsonOpts
+	CsvOpts      *CsvOpts
+}
+
+type JsonOpts struct {
+	ToCamelCase bool
+	ForceArray  bool
+	DateFormat  string
+	OmitNull    bool
+}
+
+type CsvOpts struct {
+	ToCamelCase bool
+	DateFormat  string
+	PrintHeader bool
+}
+
 type DataStore interface {
 	Connection() interface{}
 	Transaction() (Tx, error)
-	GetSlice(ds DataSet, key string, stmt string, suffix string, params []interface{}, statementAppends []interface{}, panicOnErr bool) (interface{}, error)
-	GetRecord(ds DataSet, key string, stmt string, suffix string, params []interface{}, statementAppends []interface{}, panicOnErr bool) (interface{}, error)
-	GetJSON(ds DataSet, key string, stmt string, suffix string, params []interface{}, statementAppends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string, omitNull bool) ([]byte, error)
-	GetCSV(ds DataSet, key string, stmt string, suffix string, params []interface{}, statementAppends []interface{}, toCamelCase bool, forceArray bool, panicOnErr bool, dateFormat string) (string, error)
+	Fetch(input QueryInput, dest interface{}) error
+	GetJSON(input QueryInput) ([]byte, error)
+	GetCSV(input QueryInput) (string, error)
 
-	Select(ds DataSet) *FluentSelect
+	//Select(ds DataSet) *FluentSelect
+	Select(stmt ...string) *FluentSelect
 	Insert(ds DataSet) *FluentInsert
 	//RecordsetIterator(s Select, handler RecordHandler)
 	InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
-	UpdateRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
-	Exec(stmt string, params ...interface{}) error
+	//UpdateRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
+	//Exec(stmt string, params ...interface{}) error
+}
+
+type Batch interface {
+	Queue(stmt string, params ...interface{})
+}
+
+type BatchResult interface {
+	Close() error
 }

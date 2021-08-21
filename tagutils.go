@@ -58,25 +58,6 @@ func TagAsStringArray(tag string, data interface{}) []string {
 	return tags
 }
 
-/*
-func StructToInterfaceArray(data interface{}, excludeFields []string) []interface{} {
-	val := reflect.ValueOf(data).Elem()
-	valtype := reflect.TypeOf(data).Elem()
-	fieldNum := val.NumField()
-	var ia []interface{}
-	for i := 0; i < fieldNum; i++ {
-		valField := val.Field(i)
-		if excludeFields != nil {
-			if contains(excludeFields, valtype.Field(i).Name) {
-				continue
-			}
-		}
-		ia = append(ia, valField.Addr().Interface())
-	}
-	return ia
-}
-*/
-
 func StructToIArray(data interface{}) []interface{} {
 	rval := reflect.ValueOf(data)
 	val := reflect.Indirect(rval)
