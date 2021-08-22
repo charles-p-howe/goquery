@@ -71,20 +71,20 @@ func (s *FluentSelect) Fetch() error {
 }
 
 func (s *FluentSelect) FetchJSON() ([]byte, error) {
-	s.qi.JsonOpts = &JsonOpts{
+	jsonOpts := JsonOpts{
 		ToCamelCase: s.toCamelCase,
 		OmitNull:    s.omitNull,
 		ForceArray:  s.forceArray,
 		DateFormat:  s.dateFormat,
 	}
-	return s.store.GetJSON(s.qi)
+	return s.store.GetJSON(s.qi, jsonOpts)
 }
 
 func (s *FluentSelect) FetchCSV() (string, error) {
-	s.qi.CsvOpts = &CsvOpts{
+	csvOpts := CsvOpts{
 		ToCamelCase: s.toCamelCase,
 		DateFormat:  s.dateFormat,
 		PrintHeader: true,
 	}
-	return s.store.GetCSV(s.qi)
+	return s.store.GetCSV(s.qi, csvOpts)
 }

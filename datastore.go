@@ -19,8 +19,6 @@ type QueryInput struct {
 	BindParams   []interface{}
 	StmtAppends  []interface{}
 	PanicOnErr   bool
-	JsonOpts     *JsonOpts
-	CsvOpts      *CsvOpts
 }
 
 type JsonOpts struct {
@@ -40,16 +38,15 @@ type DataStore interface {
 	Connection() interface{}
 	Transaction() (Tx, error)
 	Fetch(input QueryInput, dest interface{}) error
-	GetJSON(input QueryInput) ([]byte, error)
-	GetCSV(input QueryInput) (string, error)
-
-	//Select(ds DataSet) *FluentSelect
+	FetchRows(input QueryInput) (Rows, error)
+	GetJSON(input QueryInput, jo JsonOpts) ([]byte, error)
+	GetCSV(input QueryInput, co CsvOpts) (string, error)
 	Select(stmt ...string) *FluentSelect
 	Insert(ds DataSet) *FluentInsert
-	//RecordsetIterator(s Select, handler RecordHandler)
 	InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
 	//UpdateRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
 	//Exec(stmt string, params ...interface{}) error
+	//RecordsetIterator(s Select, handler RecordHandler)
 }
 
 type Batch interface {

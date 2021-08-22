@@ -107,8 +107,8 @@ func (pdb *PgxDb) Query(stmt string, params ...interface{}) (Rows, error) {
 	return PgxRows{rows}, err
 }
 
-func (pdb *PgxDb) Batch() Batch {
-	return &pgx.Batch{}
+func (pdb *PgxDb) Batch() (Batch, error) {
+	return &pgx.Batch{}, nil
 }
 
 func (pdb *PgxDb) SendBatch(batch Batch) BatchResult {
@@ -117,8 +117,19 @@ func (pdb *PgxDb) SendBatch(batch Batch) BatchResult {
 	return br
 }
 
+func (pdb *PgxDb) InsertStmt(ds DataSet) (string, error) {
+	return ToInsert(ds, pdb.dialect)
+}
+
 func (pdb *PgxDb) Insert(ds DataSet, rec interface{}, tx *Tx) error {
-	stmt, err := ToInsert(ds, pdb.dialect)
+
+	var err error
+	var stmt string
+	var ok bool
+
+	if stmt, ok = ds.Commands()["insert"]; !ok {
+		stmt, err = ToInsert(ds, pdb.dialect)
+	}
 	if err != nil {
 		return err
 	}

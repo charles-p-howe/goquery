@@ -86,6 +86,10 @@ func (sdb *SqlxDb) Query(stmt string, params ...interface{}) (Rows, error) {
 	return SqlRows{rows}, err
 }
 
+func (sdb *SqlxDb) Batch() (Batch, error) {
+	return nil, errors.New("batch operations are not supported by the sqlx driver")
+}
+
 func (sdb *SqlxDb) Insert(ds DataSet, rec interface{}, tx *Tx) error {
 	//pdb.db.Exec(context.Background(),stmt,
 	return nil

@@ -59,13 +59,13 @@ func pgxteardown(store DataStore, t *testing.T) {
 
 func getPgxStore(t *testing.T) DataStore {
 	config := RdbmsConfigFromEnv()
-	dialect, _ := getDialect("pgx")
+	//dialect, _ := getDialect("pgx")
 	db, err := NewPgxConnection(config)
 	if err != nil {
 		t.Errorf("Failed to connect to store:%s\n", err)
 	}
 
-	store := SqlDataStore{&db, dialect}
+	store := RdbmsDataStore{&db}
 	return &store
 }
 
@@ -105,7 +105,7 @@ func TestPgxSlice(t *testing.T) {
 	defer pgxteardown(store, t)
 
 	///////////autogenerate select///////////////////
-	fsTbl := TableImpl{
+	fsTbl := TableDataSet{
 		Name:   "fishing_spots",
 		Fields: FishingSpot{},
 	}
@@ -153,7 +153,7 @@ func TestPgxInsert(t *testing.T) {
 
 	//fs := FishingSpot{10, &l10}
 
-	fsTbl := TableImpl{
+	fsTbl := TableDataSet{
 		Name:   "fishing_spots",
 		Fields: FishingSpot{},
 	}
