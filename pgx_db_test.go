@@ -130,14 +130,14 @@ func TestPgxSlice(t *testing.T) {
 	err = store.Select().
 		DataSet(&fsTbl).
 		StatementKey("named-select").
-		Dest(dest).
+		//Dest(dest).
 		Fetch()
 
 	if err != nil {
 		t.Errorf("Failed Slice Test:%s\n", err)
 	}
 
-	if reflect.DeepEqual(dest, correctResult) {
+	if !reflect.DeepEqual(dest, correctResult) {
 		t.Errorf("Failed Slice Test: Got %v want %v", dest, correctResult)
 	}
 

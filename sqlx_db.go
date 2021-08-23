@@ -57,14 +57,14 @@ func getDialect(driver string) (DbDialect, error) {
 	}
 }
 
-func NewSqlxConnection(config *RdbmsConfig, driver string) (SqlxDb, error) {
-	dialect, err := getDialect(driver)
+func NewSqlxConnection(config *RdbmsConfig) (SqlxDb, error) {
+	dialect, err := getDialect(config.DbDriver)
 	if err != nil {
 		return SqlxDb{}, err
 	}
 	dburl := fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=disable",
 		config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname)
-	con, err := sqlx.Connect(driver, dburl)
+	con, err := sqlx.Connect(config.DbDriver, dburl)
 
 	return SqlxDb{con, dialect}, err
 }
@@ -86,8 +86,23 @@ func (sdb *SqlxDb) Query(stmt string, params ...interface{}) (Rows, error) {
 	return SqlRows{rows}, err
 }
 
+func (sdb *SqlxDb) Exec(stmt string, params ...interface{}) error {
+	res, err := sdb.db.Exec(stmt, params...)
+	//@TODO what to do with result?
+	fmt.Println(res)
+	return err
+}
+
 func (sdb *SqlxDb) Batch() (Batch, error) {
 	return nil, errors.New("batch operations are not supported by the sqlx driver")
+}
+
+func (sdb *SqlxDb) SendBatch(batch Batch) BatchResult {
+	return nil
+}
+
+func (sdb *SqlxDb) InsertStmt(ds DataSet) (string, error) {
+	return ToInsert(ds, sdb.dialect)
 }
 
 func (sdb *SqlxDb) Insert(ds DataSet, rec interface{}, tx *Tx) error {

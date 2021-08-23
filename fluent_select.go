@@ -70,6 +70,12 @@ func (s *FluentSelect) Fetch() error {
 	return error
 }
 
+func (s *FluentSelect) FetchI() (interface{}, error) {
+	dest := s.qi.DataSet.FieldSlice()
+	error := s.store.Fetch(s.qi, dest)
+	return dest, error
+}
+
 func (s *FluentSelect) FetchJSON() ([]byte, error) {
 	jsonOpts := JsonOpts{
 		ToCamelCase: s.toCamelCase,

@@ -1,15 +1,36 @@
 package dataquery
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"reflect"
 )
 
 //@TODO panic on error is not complete
 //implements the datastore interface
+
+func NewRdbmsDataStore(config *RdbmsConfig) (DataStore, error) {
+	switch config.DbStore {
+	case "pgx":
+		db, err := NewPgxConnection(config)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Unable to connect to pgx datastore: %s", err))
+		}
+		return &RdbmsDataStore{&db}, nil
+	case "sqlx":
+		db, err := NewSqlxConnection(config)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Unable to connect to pgx datastore: %s", err))
+		}
+		return &RdbmsDataStore{&db}, nil
+	default:
+		return nil, errors.New(fmt.Sprintf("Unsupported store type: %s", config.DbStore))
+	}
+}
+
 type RdbmsDataStore struct {
 	db RdbmsDb
-	//dialect DbDialect
 }
 
 func (sds *RdbmsDataStore) Connection() interface{} {
@@ -90,6 +111,10 @@ func (sds *RdbmsDataStore) InsertRecs(ds DataSet, recs interface{}, batch bool, 
 		return sds.db.Insert(ds, recs, tx)
 	}
 	return nil
+}
+
+func (sds *RdbmsDataStore) Exec(stmt string, params ...interface{}) error {
+	return sds.db.Exec(stmt, params)
 }
 
 func (sds *RdbmsDataStore) insertNewTrans(ds DataSet, rrecs reflect.Value) error {

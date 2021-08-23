@@ -8,6 +8,7 @@ type RdbmsDb interface {
 	Query(stmt string, params ...interface{}) (Rows, error)
 	Insert(ds DataSet, rec interface{}, tx *Tx) error
 	InsertStmt(ds DataSet) (string, error)
+	Exec(stmt string, params ...interface{}) error
 	Batch() (Batch, error)
 	SendBatch(batch Batch) BatchResult
 }

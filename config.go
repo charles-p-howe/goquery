@@ -11,15 +11,19 @@ type RdbmsConfig struct {
 	Dbport      string
 	Dbname      string
 	ExternalLib string
+	DbDriver    string
+	DbStore     string
 }
 
 func RdbmsConfigFromEnv() *RdbmsConfig {
-	appConfig := new(RdbmsConfig)
-	appConfig.Dbuser = os.Getenv("DBUSER")
-	appConfig.Dbpass = os.Getenv("DBPASS")
-	appConfig.Dbhost = os.Getenv("DBHOST")
-	appConfig.Dbport = os.Getenv("DBPORT")
-	appConfig.Dbname = os.Getenv("DBNAME")
-	appConfig.ExternalLib = os.Getenv("EXTERNAL_LIB")
-	return appConfig
+	dbConfig := new(RdbmsConfig)
+	dbConfig.Dbuser = os.Getenv("DBUSER")
+	dbConfig.Dbpass = os.Getenv("DBPASS")
+	dbConfig.Dbhost = os.Getenv("DBHOST")
+	dbConfig.Dbport = os.Getenv("DBPORT")
+	dbConfig.Dbname = os.Getenv("DBNAME")
+	dbConfig.DbDriver = os.Getenv("DBDRIVER")
+	dbConfig.DbStore = os.Getenv("DBSTORE")
+	dbConfig.ExternalLib = os.Getenv("EXTERNAL_LIB")
+	return dbConfig
 }

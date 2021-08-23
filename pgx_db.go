@@ -3,6 +3,7 @@ package dataquery
 import (
 	"context"
 	"fmt"
+	"log"
 	"reflect"
 	"time"
 
@@ -105,6 +106,13 @@ func (pdb *PgxDb) Get(dest interface{}, stmt string, params ...interface{}) erro
 func (pdb *PgxDb) Query(stmt string, params ...interface{}) (Rows, error) {
 	rows, err := pdb.db.Query(context.Background(), stmt, params...)
 	return PgxRows{rows}, err
+}
+
+func (pdb *PgxDb) Exec(stmt string, params ...interface{}) error {
+	ct, err := pdb.db.Exec(context.Background(), stmt, params...)
+	//@TODO what to do with commnand tag
+	log.Println(ct)
+	return err
 }
 
 func (pdb *PgxDb) Batch() (Batch, error) {
