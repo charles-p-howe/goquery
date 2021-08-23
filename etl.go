@@ -1,9 +1,5 @@
 package dataquery
 
-import (
-	"reflect"
-)
-
 type TransferOptions struct {
 	CreateTable bool
 	CommitSize  int
@@ -17,6 +13,7 @@ type ETL struct {
 	options       TransferOptions
 }
 
+/*
 func (etl *ETL) copyData(qi QueryInput) (err error) {
 	rows, err := etl.source.FetchRows(qi)
 	if err != nil {
@@ -28,7 +25,7 @@ func (etl *ETL) copyData(qi QueryInput) (err error) {
 	structRef := typeP.Interface()
 	var i int = 0
 
-	/*
+
 		for rows.Next() {
 			i++
 			err = rows.StructScan(structRef)
@@ -47,6 +44,7 @@ func (etl *ETL) copyData(qi QueryInput) (err error) {
 			}
 			etl.dest.CopyRow(table, i, structRef)
 		}
-	*/
+
 	return nil
 }
+*/
