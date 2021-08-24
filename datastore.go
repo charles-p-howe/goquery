@@ -1,5 +1,7 @@
 package dataquery
 
+import "github.com/jackc/pgconn"
+
 type RecordHandler func(interface{}) error
 
 type BindParamTemplateFunction func(field string, i int) string
@@ -54,5 +56,6 @@ type Batch interface {
 }
 
 type BatchResult interface {
+	Exec() (pgconn.CommandTag, error)
 	Close() error
 }

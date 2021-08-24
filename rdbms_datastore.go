@@ -33,6 +33,10 @@ type RdbmsDataStore struct {
 	db RdbmsDb
 }
 
+func (sds *RdbmsDataStore) RdbmsDb() RdbmsDb {
+	return sds.db
+}
+
 func (sds *RdbmsDataStore) Connection() interface{} {
 	return sds.db.Connection()
 }
@@ -97,14 +101,14 @@ func (sds *RdbmsDataStore) GetCSV(qi QueryInput, co CsvOpts) (string, error) {
 func (sds *RdbmsDataStore) InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error {
 	rval := reflect.ValueOf(recs)
 	rrecs := reflect.Indirect(rval)
-	if rval.Kind() == reflect.Slice {
+	if rrecs.Kind() == reflect.Slice {
 		if batch {
 			sds.insertBatch(ds, rrecs, batchSize)
 		} else {
 			if tx == nil {
-				sds.insertNewTrans(ds, rrecs)
+				return sds.insertNewTrans(ds, rrecs)
 			} else {
-				sds.insert(ds, rrecs, tx)
+				return sds.insert(ds, rrecs, tx)
 			}
 		}
 	} else {
@@ -163,6 +167,14 @@ func (sds *RdbmsDataStore) insertBatch(ds DataSet, rrecs reflect.Value, batchSiz
 	sds.db.SendBatch(batch)
 	return nil
 }
+
+/*
+func hasErr(br BatchResult) error {
+	for i := 0; i < 10; i++ {
+		ct, err := br
+	}
+}
+*/
 
 /*
 func (sds *RdbmsDataStore) InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error {

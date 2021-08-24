@@ -111,7 +111,7 @@ func TestPgxSlice(t *testing.T) {
 	}
 
 	dest := &[]FishingSpot{}
-	err := store.Select().DataSet(&fsTbl).Dest(dest).Fetch()
+	err := store.Select().DataSet(&fsTbl).Dest(dest).PanicOnErr(true).Fetch()
 	if err != nil {
 		t.Errorf("Failed Slice Test:%s\n", err)
 	}
@@ -130,7 +130,7 @@ func TestPgxSlice(t *testing.T) {
 	err = store.Select().
 		DataSet(&fsTbl).
 		StatementKey("named-select").
-		//Dest(dest).
+		Dest(dest).
 		Fetch()
 
 	if err != nil {
@@ -161,6 +161,30 @@ func TestPgxInsert(t *testing.T) {
 	store := pgxsetup(t)
 	defer pgxteardown(store, t)
 	err := store.Insert(&fsTbl).Records(fs).Execute()
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestPgxInsertBatch(t *testing.T) {
+	l10 := "New Spot 10"
+	l11 := "New Spot 11"
+	fs := []FishingSpot{
+		{10, &l10},
+		{11, &l11},
+	}
+
+	//fs := FishingSpot{10, &l10}
+
+	fsTbl := TableDataSet{
+		Name:   "fishing_spots",
+		Fields: FishingSpot{},
+	}
+
+	store := pgxsetup(t)
+	defer pgxteardown(store, t)
+	err := store.Insert(&fsTbl).Records(&fs).Batch(true).BatchSize(len(fs)).Execute()
 	if err != nil {
 		t.Error(err)
 	}

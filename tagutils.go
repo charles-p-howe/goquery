@@ -58,6 +58,27 @@ func TagAsStringArray(tag string, data interface{}) []string {
 	return tags
 }
 
+/*
+// Return if not struct or pointer to struct.
+    if t.Kind() == reflect.Ptr {
+        t = t.Elem()
+    }
+    if t.Kind() != reflect.Struct {
+        return
+    }
+
+    // Iterate through fields collecting names in map.
+    for i := 0; i < t.NumField(); i++ {
+        sf := t.Field(i)
+        m[sf.Name] = struct{}{}
+
+        // Recurse into anonymous fields.
+        if sf.Anonymous {
+            collectFieldNames(sf.Type, m)
+        }
+    }
+*/
+
 func StructToIArray(data interface{}) []interface{} {
 	rval := reflect.ValueOf(data)
 	val := reflect.Indirect(rval)

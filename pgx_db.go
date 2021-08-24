@@ -10,6 +10,7 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type PgxRows struct {
@@ -80,14 +81,14 @@ func(pb *PgxBatch) Queue(stmt string, params ...interface{}){
 */
 
 type PgxDb struct {
-	db      *pgx.Conn
+	db      *pgxpool.Pool
 	dialect DbDialect
 }
 
 func NewPgxConnection(config *RdbmsConfig) (PgxDb, error) {
 	dburl := fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=disable",
 		config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname)
-	con, err := pgx.Connect(context.Background(), dburl)
+	con, err := pgxpool.Connect(context.Background(), dburl)
 	return PgxDb{con, pgDialect}, err
 }
 
