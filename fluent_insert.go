@@ -1,4 +1,4 @@
-package dataquery
+package goquery
 
 type FluentInsert struct {
 	store     DataStore

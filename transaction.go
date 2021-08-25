@@ -1,4 +1,4 @@
-package dataquery
+package goquery
 
 import (
 	"context"

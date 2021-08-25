@@ -1,4 +1,4 @@
-package dataquery
+package goquery
 
 type FluentSelect struct {
 	store       DataStore

@@ -1,4 +1,4 @@
-package dataquery
+package goquery
 
 type TransferOptions struct {
 	CreateTable bool

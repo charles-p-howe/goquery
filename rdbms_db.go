@@ -1,4 +1,4 @@
-package dataquery
+package goquery
 
 type RdbmsDb interface {
 	Connection() interface{}

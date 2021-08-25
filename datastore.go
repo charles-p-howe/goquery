@@ -1,4 +1,4 @@
-package dataquery
+package goquery
 
 import "github.com/jackc/pgconn"
 
