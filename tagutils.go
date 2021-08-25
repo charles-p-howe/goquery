@@ -79,6 +79,12 @@ func TagAsStringArray(tag string, data interface{}) []string {
     }
 */
 
+func isSlice(data interface{}) bool {
+	rval := reflect.ValueOf(data)
+	val := reflect.Indirect(rval)
+	return val.Kind() == reflect.Slice
+}
+
 func StructToIArray(data interface{}) []interface{} {
 	rval := reflect.ValueOf(data)
 	val := reflect.Indirect(rval)

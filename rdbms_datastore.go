@@ -45,38 +45,34 @@ func (sds *RdbmsDataStore) Transaction() (Tx, error) {
 	return sds.db.Transaction()
 }
 
-func (sds *RdbmsDataStore) Fetch(qi QueryInput, dest interface{}) error {
+func (sds *RdbmsDataStore) Fetch(tx *Tx, qi QueryInput, dest interface{}) error {
 	sstmt, err := getSelectStatement(qi.DataSet, qi.StatementKey, qi.Statement, qi.Suffix, qi.StmtAppends)
 	if err != nil {
 		return err
 	}
-	if len(qi.BindParams) > 0 && qi.BindParams[0] != nil {
-		err = sds.db.Select(dest, sstmt, qi.BindParams...)
+
+	if isSlice(dest) {
+		err = sds.db.Select(dest, tx, sstmt, qi.BindParams...)
 	} else {
-		err = sds.db.Select(dest, sstmt)
+		err = sds.db.Get(dest, tx, sstmt, qi.BindParams...)
 	}
+
 	if err != nil && qi.PanicOnErr {
 		panic(err)
 	}
 	return err
 }
 
-func (sds *RdbmsDataStore) FetchRows(qi QueryInput) (Rows, error) {
+func (sds *RdbmsDataStore) FetchRows(tx *Tx, qi QueryInput) (Rows, error) {
 	sstmt, err := getSelectStatement(qi.DataSet, qi.StatementKey, qi.Statement, qi.Suffix, qi.StmtAppends)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(qi.BindParams) > 0 && qi.BindParams[0] != nil {
-		return sds.db.Query(sstmt, qi.BindParams...)
-	} else {
-		return sds.db.Query(sstmt)
-	}
-
+	return sds.db.Query(tx, sstmt, qi.BindParams...)
 }
 
 func (sds *RdbmsDataStore) GetJSON(qi QueryInput, jo JsonOpts) ([]byte, error) {
-	rows, err := sds.FetchRows(qi)
+	rows, err := sds.FetchRows(nil, qi)
 	if err != nil {
 		log.Println(err)
 		if qi.PanicOnErr {
@@ -89,7 +85,7 @@ func (sds *RdbmsDataStore) GetJSON(qi QueryInput, jo JsonOpts) ([]byte, error) {
 }
 
 func (sds *RdbmsDataStore) GetCSV(qi QueryInput, co CsvOpts) (string, error) {
-	rows, err := sds.FetchRows(qi)
+	rows, err := sds.FetchRows(nil, qi)
 	if err != nil {
 		log.Println(err)
 		return "", err
@@ -117,8 +113,8 @@ func (sds *RdbmsDataStore) InsertRecs(ds DataSet, recs interface{}, batch bool, 
 	return nil
 }
 
-func (sds *RdbmsDataStore) Exec(stmt string, params ...interface{}) error {
-	return sds.db.Exec(stmt, params)
+func (sds *RdbmsDataStore) Exec(tx *Tx, stmt string, params ...interface{}) error {
+	return sds.db.Exec(tx, stmt, params...)
 }
 
 func (sds *RdbmsDataStore) insertNewTrans(ds DataSet, rrecs reflect.Value) error {

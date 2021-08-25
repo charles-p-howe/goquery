@@ -8,10 +8,16 @@ import (
 	"time"
 
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
+
+//@TODO figure out how to handle command tags and then we only need a single Execr interface
+type PgxExecr interface {
+	Exec(ctx context.Context, stmt string, params ...interface{}) (pgconn.CommandTag, error)
+}
 
 type PgxRows struct {
 	rows pgx.Rows
@@ -96,21 +102,35 @@ func (pdb *PgxDb) Connection() interface{} {
 	return pdb.db
 }
 
-func (pdb *PgxDb) Select(dest interface{}, stmt string, params ...interface{}) error {
-	return pgxscan.Select(context.Background(), pdb.db, dest, stmt, params...)
+func (pdb *PgxDb) querier(tx *Tx) pgxscan.Querier {
+	if tx != nil {
+		return tx.PgxTx()
+	}
+	return pdb.db
 }
 
-func (pdb *PgxDb) Get(dest interface{}, stmt string, params ...interface{}) error {
-	return pgxscan.Select(context.Background(), pdb.db, dest, stmt, params...)
+func (pdb *PgxDb) execr(tx *Tx) PgxExecr {
+	if tx != nil {
+		return tx.PgxTx()
+	}
+	return pdb.db
 }
 
-func (pdb *PgxDb) Query(stmt string, params ...interface{}) (Rows, error) {
-	rows, err := pdb.db.Query(context.Background(), stmt, params...)
+func (pdb *PgxDb) Select(dest interface{}, tx *Tx, stmt string, params ...interface{}) error {
+	return pgxscan.Select(context.Background(), pdb.querier(tx), dest, stmt, params...)
+}
+
+func (pdb *PgxDb) Get(dest interface{}, tx *Tx, stmt string, params ...interface{}) error {
+	return pgxscan.Get(context.Background(), pdb.querier(tx), dest, stmt, params...)
+}
+
+func (pdb *PgxDb) Query(tx *Tx, stmt string, params ...interface{}) (Rows, error) {
+	rows, err := pdb.querier(tx).Query(context.Background(), stmt, params...)
 	return PgxRows{rows}, err
 }
 
-func (pdb *PgxDb) Exec(stmt string, params ...interface{}) error {
-	ct, err := pdb.db.Exec(context.Background(), stmt, params...)
+func (pdb *PgxDb) Exec(tx *Tx, stmt string, params ...interface{}) error {
+	ct, err := pdb.execr(tx).Exec(context.Background(), stmt, params...)
 	//@TODO what to do with commnand tag
 	log.Println(ct)
 	return err

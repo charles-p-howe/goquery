@@ -73,20 +73,20 @@ func (sdb *SqlxDb) Connection() interface{} {
 	return sdb.db
 }
 
-func (sdb *SqlxDb) Select(dest interface{}, stmt string, params ...interface{}) error {
+func (sdb *SqlxDb) Select(dest interface{}, tx *Tx, stmt string, params ...interface{}) error {
 	return sdb.db.Select(dest, stmt, params)
 }
 
-func (sdb *SqlxDb) Get(dest interface{}, stmt string, params ...interface{}) error {
+func (sdb *SqlxDb) Get(dest interface{}, tx *Tx, stmt string, params ...interface{}) error {
 	return sdb.db.Get(dest, stmt, params)
 }
 
-func (sdb *SqlxDb) Query(stmt string, params ...interface{}) (Rows, error) {
+func (sdb *SqlxDb) Query(tx *Tx, stmt string, params ...interface{}) (Rows, error) {
 	rows, err := sdb.db.Query(stmt, params)
 	return SqlRows{rows}, err
 }
 
-func (sdb *SqlxDb) Exec(stmt string, params ...interface{}) error {
+func (sdb *SqlxDb) Exec(tx *Tx, stmt string, params ...interface{}) error {
 	res, err := sdb.db.Exec(stmt, params...)
 	//@TODO what to do with result?
 	fmt.Println(res)

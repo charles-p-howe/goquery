@@ -39,15 +39,15 @@ type CsvOpts struct {
 type DataStore interface {
 	Connection() interface{}
 	Transaction() (Tx, error)
-	Fetch(input QueryInput, dest interface{}) error
-	FetchRows(input QueryInput) (Rows, error)
+	Fetch(tx *Tx, input QueryInput, dest interface{}) error
+	FetchRows(tx *Tx, input QueryInput) (Rows, error)
 	GetJSON(input QueryInput, jo JsonOpts) ([]byte, error)
 	GetCSV(input QueryInput, co CsvOpts) (string, error)
 	Select(stmt ...string) *FluentSelect
 	Insert(ds DataSet) *FluentInsert
 	InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
 	//UpdateRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
-	Exec(stmt string, params ...interface{}) error
+	Exec(tx *Tx, stmt string, params ...interface{}) error
 	//RecordsetIterator(s Select, handler RecordHandler)
 }
 

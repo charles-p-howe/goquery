@@ -6,16 +6,18 @@ import (
 	"errors"
 	"log"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jmoiron/sqlx"
 )
+
+var NoTx *Tx = nil
 
 type Tx struct {
 	tx interface{}
 }
 
-func (t Tx) PgxTx() pgx.Tx {
-	return t.tx.(pgx.Tx)
+func (t Tx) PgxTx() *pgxpool.Tx {
+	return t.tx.(*pgxpool.Tx)
 }
 
 func (t Tx) SqlXTx() *sqlx.Tx {
@@ -30,8 +32,8 @@ func (t Tx) Rollback() error {
 	switch t.tx.(type) {
 	case *sqlx.Tx:
 		return t.tx.(*sqlx.Tx).Rollback()
-	case pgx.Tx:
-		return t.tx.(pgx.Tx).Rollback(context.Background())
+	case *pgxpool.Tx:
+		return t.tx.(*pgxpool.Tx).Rollback(context.Background())
 	}
 	return errors.New("invalid transaction type")
 }
@@ -40,8 +42,8 @@ func (t Tx) Commit() error {
 	switch t.tx.(type) {
 	case *sqlx.Tx:
 		return t.tx.(*sqlx.Tx).Commit()
-	case pgx.Tx:
-		return t.tx.(pgx.Tx).Commit(context.Background())
+	case *pgxpool.Tx:
+		return t.tx.(*pgxpool.Tx).Commit(context.Background())
 	}
 	return errors.New("invalid transaction type")
 }

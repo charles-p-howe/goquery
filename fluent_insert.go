@@ -12,6 +12,11 @@ type FluentInsert struct {
 
 const defaultBatchSize = 100
 
+func (i *FluentInsert) Tx(tx *Tx) *FluentInsert {
+	i.tx = tx
+	return i
+}
+
 func (i *FluentInsert) Batch(batch bool) *FluentInsert {
 	i.batch = batch
 	return i

@@ -2,6 +2,7 @@ package goquery
 
 type FluentSelect struct {
 	store       DataStore
+	tx          *Tx
 	qi          QueryInput
 	dest        interface{}
 	toCamelCase bool
@@ -12,6 +13,11 @@ type FluentSelect struct {
 
 func (s *FluentSelect) DataSet(ds DataSet) *FluentSelect {
 	s.qi.DataSet = ds
+	return s
+}
+
+func (s *FluentSelect) Tx(tx *Tx) *FluentSelect {
+	s.tx = tx
 	return s
 }
 
@@ -66,13 +72,13 @@ func (s *FluentSelect) Params(params ...interface{}) *FluentSelect {
 }
 
 func (s *FluentSelect) Fetch() error {
-	error := s.store.Fetch(s.qi, s.dest)
+	error := s.store.Fetch(s.tx, s.qi, s.dest)
 	return error
 }
 
 func (s *FluentSelect) FetchI() (interface{}, error) {
 	dest := s.qi.DataSet.FieldSlice()
-	error := s.store.Fetch(s.qi, dest)
+	error := s.store.Fetch(s.tx, s.qi, dest)
 	return dest, error
 }
 
