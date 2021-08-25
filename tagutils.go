@@ -91,6 +91,28 @@ func StructToIArray(data interface{}) []interface{} {
 	if val.Kind() == reflect.Slice {
 		val = val.Elem()
 	}
+	typ := reflect.TypeOf(data)
+	fieldNum := val.NumField()
+
+	var ia []interface{}
+	for i := 0; i < fieldNum; i++ {
+		if tagval, ok := typ.Field(i).Tag.Lookup("dbid"); ok {
+			if tagval == "AUTOINCREMENT" {
+				continue
+			}
+		}
+		ia = append(ia, reflect.Indirect(val.Field(i)).Interface())
+	}
+	return ia
+}
+
+/*
+func StructToIArray2(data interface{}) []interface{} {
+	rval := reflect.ValueOf(data)
+	val := reflect.Indirect(rval)
+	if val.Kind() == reflect.Slice {
+		val = val.Elem()
+	}
 	fieldNum := val.NumField()
 	ia := make([]interface{}, fieldNum)
 	for i := 0; i < fieldNum; i++ {
@@ -98,6 +120,7 @@ func StructToIArray(data interface{}) []interface{} {
 	}
 	return ia
 }
+*/
 
 func StructToIArrayEx(data interface{}, excludeFields []string, tagField string, excludeTags []string) []interface{} {
 	val := reflect.ValueOf(data).Elem()
