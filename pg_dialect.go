@@ -10,4 +10,8 @@ var pgDialect = DbDialect{
 	Seq: func(sequence string) string {
 		return fmt.Sprintf("nextval('%s')", sequence)
 	},
+	Url: func(config *RdbmsConfig) string {
+		return fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=disable",
+			config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname)
+	},
 }

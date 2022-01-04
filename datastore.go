@@ -6,11 +6,13 @@ type RecordHandler func(interface{}) error
 
 type BindParamTemplateFunction func(field string, i int) string
 type SequenceTemplateFunction func(sequence string) string
+type UrlTemplateFunction func(config *RdbmsConfig) string
 
 type DbDialect struct {
 	TableExistsStmt string
 	Bind            BindParamTemplateFunction
 	Seq             SequenceTemplateFunction
+	Url             UrlTemplateFunction
 }
 
 type QueryInput struct {

@@ -62,8 +62,7 @@ func NewSqlxConnection(config *RdbmsConfig) (SqlxDb, error) {
 	if err != nil {
 		return SqlxDb{}, err
 	}
-	dburl := fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=disable",
-		config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname)
+	dburl := dialect.Url(config)
 	con, err := sqlx.Connect(config.DbDriver, dburl)
 
 	return SqlxDb{con, dialect}, err
