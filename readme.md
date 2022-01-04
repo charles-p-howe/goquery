@@ -97,9 +97,10 @@ err:=store.Select("select %s from %s").
 	Dest(&dest).
 	Fetch()
 
-//finally if operating in a transaction, you can panic on err
+//finally you can query agains transactions, and can optionally panic on err
 err:=store.Select().
 	Dataset(myTable).
+	Tx(&tx) //transaction reference
 	Dest(&dest).
 	PanicOnErr(true).
 	Fetch()
