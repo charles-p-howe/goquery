@@ -66,9 +66,9 @@ myTable:=data.TableDataset{
 }
 
 err:=store.Select().
-           Dataset(myTable).
-		   Dest(&dest).
-		   Fetch()
+			Dataset(myTable).
+			Dest(&dest).
+			Fetch()
 
 //or
 
