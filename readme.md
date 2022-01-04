@@ -1,6 +1,6 @@
 # goquery is a small library to simplify commodity database oprations.
 
-## Warning: This library is in an experiemental phase
+## Warning: This library is in an experimental phase
 
 ---
 Connecting to a RDBMS:
@@ -97,7 +97,7 @@ err:=store.Select("select %s from %s").
 	Dest(&dest).
 	Fetch()
 
-//finally you can query agains transactions, and can optionally panic on err
+//finally you can query against transactions, and can optionally panic on err
 err:=store.Select().
 	Dataset(myTable).
 	Tx(&tx) //transaction reference
