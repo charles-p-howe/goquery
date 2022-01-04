@@ -81,7 +81,7 @@ func (sdb *SqlxDb) Get(dest interface{}, tx *Tx, stmt string, params ...interfac
 }
 
 func (sdb *SqlxDb) Query(tx *Tx, stmt string, params ...interface{}) (Rows, error) {
-	rows, err := sdb.db.Query(stmt, params)
+	rows, err := sdb.db.Query(stmt, params...)
 	return SqlRows{rows}, err
 }
 
