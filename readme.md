@@ -62,7 +62,7 @@ myTable:=data.TableDataset{
 		"select-all":`select * from mytable`,
 		"select-none":`select * from mytable where false`,
 	},
-	Fields:MyFields{},
+	Fields:MyFields{}, //depricated...do not use
 }
 
 err:=store.Select().
