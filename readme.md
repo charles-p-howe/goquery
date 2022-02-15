@@ -1,4 +1,4 @@
-# goquery is a small library to simplify commodity database oprations.
+# goquery is a small library to simplify commodity database operations.
 
 ## Warning: This library is in an experimental phase
 
