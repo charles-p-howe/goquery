@@ -3,6 +3,7 @@ package goquery
 import (
 	"context"
 	"reflect"
+	"strconv"
 	"testing"
 )
 
@@ -168,14 +169,22 @@ func TestPgxInsert(t *testing.T) {
 }
 
 func TestPgxInsertBatch(t *testing.T) {
-	l10 := "New Spot 10"
-	l11 := "New Spot 11"
-	fs := []FishingSpot{
-		{10, &l10},
-		{11, &l11},
-	}
 
-	//fs := FishingSpot{10, &l10}
+	/*
+		l10 := "New Spot 10"
+		l11 := "New Spot 11"
+		fs := []FishingSpot{
+			{10, &l10},
+			{11, &l11},
+		}
+	*/
+
+	count := 40000
+	fs := make([]FishingSpot, count)
+	for i := 0; i < count; i++ {
+		val := strconv.Itoa(i)
+		fs[i] = FishingSpot{int32(i + 10), &val}
+	}
 
 	fsTbl := TableDataSet{
 		Name:   "fishing_spots",
