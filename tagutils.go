@@ -97,11 +97,16 @@ func StructToIArray(data interface{}) []interface{} {
 	var ia []interface{}
 	for i := 0; i < fieldNum; i++ {
 		if tagval, ok := typ.Field(i).Tag.Lookup("dbid"); ok {
-			if tagval == "AUTOINCREMENT" {
+			if tagval == "AUTOINCREMENT" || tagval == "SEQUENCE" {
 				continue
 			}
 		}
-		ia = append(ia, reflect.Indirect(val.Field(i)).Interface())
+		v := val.Field(i)
+		if v.Kind() == reflect.Pointer && v.IsNil() {
+			ia = append(ia, nil)
+		} else {
+			ia = append(ia, reflect.Indirect(v).Interface())
+		}
 	}
 	return ia
 }

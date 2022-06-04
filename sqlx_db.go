@@ -73,10 +73,16 @@ func (sdb *SqlxDb) Connection() interface{} {
 }
 
 func (sdb *SqlxDb) Select(dest interface{}, tx *Tx, stmt string, params ...interface{}) error {
+	if len(params) == 0 {
+		return sdb.db.Select(dest, stmt)
+	}
 	return sdb.db.Select(dest, stmt, params)
 }
 
 func (sdb *SqlxDb) Get(dest interface{}, tx *Tx, stmt string, params ...interface{}) error {
+	if len(params) == 0 {
+		return sdb.db.Get(dest, stmt)
+	}
 	return sdb.db.Get(dest, stmt, params)
 }
 

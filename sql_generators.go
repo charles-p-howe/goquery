@@ -50,6 +50,7 @@ func ToInsert(ds DataSet, dialect DbDialect) (string, error) {
 	typ := reflect.TypeOf(ds.Attributes())
 	fieldNum := typ.NumField()
 	fieldcount := 0
+	paramcount := 0
 	for i := 0; i < fieldNum; i++ {
 		if dbfield, ok := typ.Field(i).Tag.Lookup("db"); ok && dbfield != "_" {
 			if fieldcount > 0 {
@@ -68,8 +69,9 @@ func ToInsert(ds DataSet, dialect DbDialect) (string, error) {
 				}
 			} else {
 				fieldBuilder.WriteString(dbfield)
-				bindBuilder.WriteString(dialect.Bind(dbfield, fieldcount))
+				bindBuilder.WriteString(dialect.Bind(dbfield, paramcount))
 				fieldcount++
+				paramcount++
 			}
 		}
 	}
