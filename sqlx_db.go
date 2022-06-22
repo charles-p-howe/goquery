@@ -68,22 +68,29 @@ func NewSqlxConnection(config *RdbmsConfig) (SqlxDb, error) {
 	return SqlxDb{con, dialect}, err
 }
 
+func (sdb *SqlxDb) querier(tx *Tx) sqlx.Queryer {
+	if tx != nil {
+		return tx.SqlXTx()
+	}
+	return sdb.db
+}
+
 func (sdb *SqlxDb) Connection() interface{} {
 	return sdb.db
 }
 
 func (sdb *SqlxDb) Select(dest interface{}, tx *Tx, stmt string, params ...interface{}) error {
 	if len(params) == 0 {
-		return sdb.db.Select(dest, stmt)
+		return sqlx.Select(sdb.querier(tx), dest, stmt)
 	}
-	return sdb.db.Select(dest, stmt, params)
+	return sqlx.Select(sdb.querier(tx), dest, stmt, params)
 }
 
 func (sdb *SqlxDb) Get(dest interface{}, tx *Tx, stmt string, params ...interface{}) error {
 	if len(params) == 0 {
-		return sdb.db.Get(dest, stmt)
+		return sqlx.Get(sdb.querier(tx), dest, stmt)
 	}
-	return sdb.db.Get(dest, stmt, params)
+	return sqlx.Get(sdb.querier(tx), dest, stmt, params)
 }
 
 func (sdb *SqlxDb) Query(tx *Tx, stmt string, params ...interface{}) (Rows, error) {
