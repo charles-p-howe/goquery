@@ -84,7 +84,3 @@ func (db *DB) SetConnMaxLifetime(d time.Duration)
 func (db *DB) SetMaxIdleConns(n int)
 func (db *DB) SetMaxOpenConns(n int)
 */
-
-type ConnectionConfig struct {
-	MaxIdleTime
-}
