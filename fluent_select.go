@@ -76,6 +76,10 @@ func (s *FluentSelect) Fetch() error {
 	return error
 }
 
+func (s *FluentSelect) FetchRows() (Rows, error) {
+	return s.store.FetchRows(s.tx, s.qi)
+}
+
 func (s *FluentSelect) FetchI() (interface{}, error) {
 	dest := s.qi.DataSet.FieldSlice()
 	error := s.store.Fetch(s.tx, s.qi, dest)
