@@ -117,6 +117,10 @@ func (sds *RdbmsDataStore) Exec(tx *Tx, stmt string, params ...interface{}) erro
 	return sds.db.Exec(tx, stmt, params...)
 }
 
+func (sds *RdbmsDataStore) MustExec(tx *Tx, stmt string, params ...interface{}) {
+	sds.db.MustExec(tx, stmt, params...)
+}
+
 func (sds *RdbmsDataStore) insertNewTrans(ds DataSet, rrecs reflect.Value) error {
 	err := Transaction(sds, func(tx Tx) {
 		err := sds.insert(ds, rrecs, &tx)

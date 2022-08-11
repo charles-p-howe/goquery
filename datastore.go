@@ -50,6 +50,7 @@ type DataStore interface {
 	InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
 	//UpdateRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
 	Exec(tx *Tx, stmt string, params ...interface{}) error
+	MustExec(tx *Tx, stmt string, params ...interface{})
 	//RecordsetIterator(s Select, handler RecordHandler)
 }
 

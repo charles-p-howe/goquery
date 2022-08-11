@@ -150,6 +150,15 @@ func (pdb *PgxDb) Exec(tx *Tx, stmt string, params ...interface{}) error {
 	return err
 }
 
+func (pdb *PgxDb) MustExec(tx *Tx, stmt string, params ...interface{}) {
+	ct, err := pdb.execr(tx).Exec(context.Background(), stmt, params...)
+	//@TODO what to do with commnand tag
+	log.Println(ct)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (pdb *PgxDb) Batch() (Batch, error) {
 	return &pgx.Batch{}, nil
 }

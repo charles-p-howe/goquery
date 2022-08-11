@@ -105,6 +105,12 @@ func (sdb *SqlxDb) Exec(tx *Tx, stmt string, params ...interface{}) error {
 	return err
 }
 
+func (sdb *SqlxDb) MustExec(tx *Tx, stmt string, params ...interface{}) {
+	res := sdb.db.MustExec(stmt, params...)
+	//@TODO what to do with result?
+	fmt.Println(res)
+}
+
 func (sdb *SqlxDb) Batch() (Batch, error) {
 	return nil, errors.New("batch operations are not supported by the sqlx driver")
 }
