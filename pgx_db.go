@@ -94,6 +94,20 @@ type PgxDb struct {
 func NewPgxConnection(config *RdbmsConfig) (PgxDb, error) {
 	dburl := fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=disable",
 		config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname)
+
+	if config.PoolMaxConns > 0 {
+		dburl = fmt.Sprintf("%s %s=%d", dburl, "pool_max_conns", config.PoolMaxConns)
+	}
+	if config.PoolMinConns > 0 {
+		dburl = fmt.Sprintf("%s %s=%d", dburl, "pool_min_conns", config.PoolMinConns)
+	}
+	if config.PoolMaxConnLifetime != "" {
+		dburl = fmt.Sprintf("%s %s=%s", dburl, "pool_max_conn_lifetime", config.PoolMaxConnLifetime)
+	}
+	if config.PoolMaxConnIdle != "" {
+		dburl = fmt.Sprintf("%s %s=%s", dburl, "pool_max_conn_idle_time", config.PoolMaxConnIdle)
+	}
+
 	con, err := pgxpool.Connect(context.Background(), dburl)
 	return PgxDb{con, pgDialect}, err
 }
