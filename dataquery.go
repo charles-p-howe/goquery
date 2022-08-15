@@ -15,6 +15,7 @@ type Rows interface {
 	ColumnTypes() ([]reflect.Type, error)
 	Next() bool
 	Scan(dest ...interface{}) error
+	ScanStruct(dest interface{}) error
 	Close() error
 }
 

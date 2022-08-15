@@ -6,18 +6,20 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/georgysavva/scany/sqlscan"
 	"github.com/jmoiron/sqlx"
 )
 
 type SqlRows struct {
-	rows *sql.Rows
+	rows       *sql.Rows
+	rowScanner *sqlscan.RowScanner
 }
 
-func (s SqlRows) Columns() ([]string, error) {
+func (s *SqlRows) Columns() ([]string, error) {
 	return s.rows.Columns()
 }
 
-func (s SqlRows) ColumnTypes() ([]reflect.Type, error) {
+func (s *SqlRows) ColumnTypes() ([]reflect.Type, error) {
 	sts, err := s.rows.ColumnTypes()
 	if err != nil {
 		return nil, err
@@ -29,15 +31,22 @@ func (s SqlRows) ColumnTypes() ([]reflect.Type, error) {
 	return t, nil
 }
 
-func (s SqlRows) Next() bool {
+func (s *SqlRows) Next() bool {
 	return s.rows.Next()
 }
 
-func (s SqlRows) Scan(dest ...interface{}) error {
+func (s *SqlRows) Scan(dest ...interface{}) error {
 	return s.rows.Scan(dest...)
 }
 
-func (s SqlRows) Close() error {
+func (s *SqlRows) ScanStruct(dest interface{}) error {
+	if s.rowScanner == nil {
+		s.rowScanner = sqlscan.NewRowScanner(s.rows)
+	}
+	return s.rowScanner.Scan(dest)
+}
+
+func (s *SqlRows) Close() error {
 	return s.rows.Close()
 }
 
@@ -95,7 +104,7 @@ func (sdb *SqlxDb) Get(dest interface{}, tx *Tx, stmt string, params ...interfac
 
 func (sdb *SqlxDb) Query(tx *Tx, stmt string, params ...interface{}) (Rows, error) {
 	rows, err := sdb.db.Query(stmt, params...)
-	return SqlRows{rows}, err
+	return &SqlRows{rows, nil}, err
 }
 
 func (sdb *SqlxDb) Exec(tx *Tx, stmt string, params ...interface{}) error {

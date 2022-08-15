@@ -20,10 +20,11 @@ type PgxExecr interface {
 }
 
 type PgxRows struct {
-	rows pgx.Rows
+	rows       pgx.Rows
+	rowScanner *pgxscan.RowScanner
 }
 
-func (p PgxRows) Columns() ([]string, error) {
+func (p *PgxRows) Columns() ([]string, error) {
 	metadata := p.rows.FieldDescriptions()
 	columns := make([]string, len(metadata))
 	for i, f := range metadata {
@@ -32,7 +33,7 @@ func (p PgxRows) Columns() ([]string, error) {
 	return columns, nil
 }
 
-func (p PgxRows) ColumnTypes() ([]reflect.Type, error) {
+func (p *PgxRows) ColumnTypes() ([]reflect.Type, error) {
 	metadata := p.rows.FieldDescriptions()
 	t := make([]reflect.Type, len(metadata))
 	for i, fd := range metadata {
@@ -62,15 +63,22 @@ func (p PgxRows) ColumnTypes() ([]reflect.Type, error) {
 	return t, nil
 }
 
-func (p PgxRows) Next() bool {
+func (p *PgxRows) Next() bool {
 	return p.rows.Next()
 }
 
-func (p PgxRows) Scan(dest ...interface{}) error {
+func (p *PgxRows) Scan(dest ...interface{}) error {
 	return p.rows.Scan(dest...)
 }
 
-func (p PgxRows) Close() error {
+func (p *PgxRows) ScanStruct(dest interface{}) error {
+	if p.rowScanner == nil {
+		p.rowScanner = pgxscan.NewRowScanner(p.rows)
+	}
+	return p.rowScanner.Scan(dest)
+}
+
+func (p *PgxRows) Close() error {
 	p.rows.Close()
 	return nil
 }
@@ -140,7 +148,7 @@ func (pdb *PgxDb) Get(dest interface{}, tx *Tx, stmt string, params ...interface
 
 func (pdb *PgxDb) Query(tx *Tx, stmt string, params ...interface{}) (Rows, error) {
 	rows, err := pdb.querier(tx).Query(context.Background(), stmt, params...)
-	return PgxRows{rows}, err
+	return &PgxRows{rows, nil}, err
 }
 
 func (pdb *PgxDb) Exec(tx *Tx, stmt string, params ...interface{}) error {
