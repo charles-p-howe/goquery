@@ -41,6 +41,11 @@ func pgxsetup(t *testing.T) DataStore {
 		if err != nil {
 			panic(err)
 		}
+
+		_, err = tx.PgxTx().Exec(ctx, "create table arrays_test (id int,intlist integer[],boollist boolean[])")
+		if err != nil {
+			panic(err)
+		}
 	})
 	if err != nil {
 		t.Errorf("Setup error:%s\n", err)
@@ -49,17 +54,28 @@ func pgxsetup(t *testing.T) DataStore {
 }
 
 func pgxteardown(store DataStore, t *testing.T) {
-	ctx := context.Background()
+	//ctx := context.Background()
 	err := Transaction(store, func(tx Tx) {
-		pgxtx := tx.PgxTx()
-		_, err := pgxtx.Exec(ctx, "drop table fishing_spots")
-		if err != nil {
-			panic(err)
-		}
-		_, err = pgxtx.Exec(ctx, "drop table json_test")
-		if err != nil {
-			panic(err)
-		}
+		store.MustExec(&tx, "drop table fishing_spots")
+		store.MustExec(&tx, "drop table json_test")
+		store.MustExec(&tx, "drop table arrays_test")
+
+		/*
+			pgxtx := tx.PgxTx()
+			_, err := pgxtx.Exec(ctx, "drop table fishing_spots")
+			if err != nil {
+				panic(err)
+			}
+			_, err = pgxtx.Exec(ctx, "drop table json_test")
+			if err != nil {
+				panic(err)
+			}
+
+			_, err = pgxtx.Exec(ctx, "drop table arrays_test")
+			if err != nil {
+				panic(err)
+			}
+		*/
 	})
 	if err != nil {
 		t.Errorf("Failed to teardown test:%s\n", err)
@@ -206,6 +222,38 @@ func TestPgxInsertBatch(t *testing.T) {
 		t.Error(err)
 	}
 
+}
+
+type ArrayTest struct {
+	ID       int    `db:"id"`
+	IntList  []int  `db:"intlist"`
+	Boollist []bool `db:"boollist"`
+}
+
+var at TableDataSet = TableDataSet{
+	Name:   "arrays_test",
+	Fields: ArrayTest{},
+}
+
+func TestPgxArrayInsert(t *testing.T) {
+	store := pgxsetup(t)
+	defer pgxteardown(store, t)
+	il := []int{3, 5, 7, 9}
+	bl := []bool{false, true, false, true}
+	store.MustExec(NoTx, `insert into arrays_test (id,intlist,boollist) values ($1,$2,$3)`, 1, il, bl)
+
+	atData := ArrayTest{2, []int{100, 101, 102}, []bool{true, false, false, true}}
+	err := store.Insert(&at).Records(atData).Execute()
+	if err != nil {
+		t.Error(err)
+	}
+
+	dest := []ArrayTest{}
+	err = store.Select("select * from arrays_test").Dest(&dest).Fetch()
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(dest)
 }
 
 type JsonTest struct {

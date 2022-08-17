@@ -25,6 +25,14 @@ type QueryInput struct {
 	PanicOnErr   bool
 }
 
+type InsertInput struct {
+	Dataset    DataSet
+	Records    interface{}
+	Batch      bool
+	BatchSize  int
+	PanicOnErr bool
+}
+
 type JsonOpts struct {
 	ToCamelCase bool
 	ForceArray  bool
@@ -47,7 +55,8 @@ type DataStore interface {
 	GetCSV(input QueryInput, co CsvOpts) (string, error)
 	Select(stmt ...string) *FluentSelect
 	Insert(ds DataSet) *FluentInsert
-	InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
+	//InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
+	InsertRecs(tx *Tx, input InsertInput) error
 	//UpdateRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
 	Exec(tx *Tx, stmt string, params ...interface{}) error
 	MustExec(tx *Tx, stmt string, params ...interface{})

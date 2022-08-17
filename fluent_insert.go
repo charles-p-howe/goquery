@@ -1,12 +1,13 @@
 package goquery
 
 type FluentInsert struct {
-	store     DataStore
-	ds        DataSet
-	batch     bool
-	batchSize int
-	tx        *Tx
-	records   interface{}
+	store      DataStore
+	ds         DataSet
+	batch      bool
+	batchSize  int
+	tx         *Tx
+	records    interface{}
+	panicOnErr bool
 	//return id
 }
 
@@ -32,6 +33,19 @@ func (i *FluentInsert) Records(recs interface{}) *FluentInsert {
 	return i
 }
 
+func (i *FluentInsert) PanicOnErr(panicOnErr bool) *FluentInsert {
+	i.panicOnErr = panicOnErr
+	return i
+}
+
 func (i *FluentInsert) Execute() error {
-	return i.store.InsertRecs(i.ds, i.records, i.batch, i.batchSize, i.tx)
+	//return i.store.InsertRecs(i.ds, i.records, i.batch, i.batchSize, i.tx)
+	ii := InsertInput{
+		Dataset:    i.ds,
+		Records:    i.records,
+		Batch:      i.batch,
+		BatchSize:  i.batchSize,
+		PanicOnErr: i.panicOnErr,
+	}
+	return i.store.InsertRecs(i.tx, ii)
 }

@@ -94,23 +94,28 @@ func (sds *RdbmsDataStore) GetCSV(qi QueryInput, co CsvOpts) (string, error) {
 	return RowsToCSV(rows, co.ToCamelCase, co.DateFormat)
 }
 
-func (sds *RdbmsDataStore) InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error {
+func (sds *RdbmsDataStore) InsertRecs(tx *Tx, input InsertInput) error {
+	var err error
+	recs := input.Records
 	rval := reflect.ValueOf(recs)
 	rrecs := reflect.Indirect(rval)
 	if rrecs.Kind() == reflect.Slice {
-		if batch {
-			sds.insertBatch(ds, rrecs, batchSize)
+		if input.Batch {
+			err = sds.insertBatch(input.Dataset, rrecs, input.BatchSize)
 		} else {
 			if tx == nil {
-				return sds.insertNewTrans(ds, rrecs)
+				err = sds.insertNewTrans(input.Dataset, rrecs)
 			} else {
-				return sds.insert(ds, rrecs, tx)
+				err = sds.insert(input.Dataset, rrecs, tx)
 			}
 		}
 	} else {
-		return sds.db.Insert(ds, recs, tx)
+		err = sds.db.Insert(input.Dataset, recs, tx)
 	}
-	return nil
+	if err != nil && input.PanicOnErr {
+		panic(err)
+	}
+	return err
 }
 
 func (sds *RdbmsDataStore) Exec(tx *Tx, stmt string, params ...interface{}) error {
