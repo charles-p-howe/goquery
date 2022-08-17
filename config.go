@@ -38,17 +38,21 @@ func RdbmsConfigFromEnv() *RdbmsConfig {
 	dbConfig.DbStore = os.Getenv("DBSTORE")
 	dbConfig.ExternalLib = os.Getenv("EXTERNAL_LIB")
 
+	if dbConfig.Dbport == "" {
+		dbConfig.Dbport = "5432"
+	}
+
 	maxConns := os.Getenv("POOLMAXCONNS")
 	mc, err := strconv.Atoi(maxConns)
 	if err != nil {
-		log.Printf("Error parsing POOLMAXCONNS value of %s: Error is %s\n", maxConns, err)
+		log.Printf("Error parsing POOLMAXCONNS value of \"%s\":  Will fall back to default POOLMAXCONNS value.\n", maxConns)
 	}
 	dbConfig.PoolMaxConns = mc
 
 	minConns := os.Getenv("POOLMINCONNS")
 	mc, err = strconv.Atoi(minConns)
 	if err != nil {
-		log.Printf("Error parsing POOLMINCONNS value of %s: Error is %s\n", minConns, err)
+		log.Printf("Error parsing POOLMINCONNS value of \"%s\":  Will fall back to default POOLMINCONNS value.\n", minConns)
 	}
 	dbConfig.PoolMinConns = mc
 

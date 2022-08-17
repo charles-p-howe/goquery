@@ -37,6 +37,10 @@ func pgxsetup(t *testing.T) DataStore {
 				panic(err)
 			}
 		}
+		_, err = tx.PgxTx().Exec(ctx, "create table json_test (id int,json_attr jsonb)")
+		if err != nil {
+			panic(err)
+		}
 	})
 	if err != nil {
 		t.Errorf("Setup error:%s\n", err)
@@ -49,6 +53,10 @@ func pgxteardown(store DataStore, t *testing.T) {
 	err := Transaction(store, func(tx Tx) {
 		pgxtx := tx.PgxTx()
 		_, err := pgxtx.Exec(ctx, "drop table fishing_spots")
+		if err != nil {
+			panic(err)
+		}
+		_, err = pgxtx.Exec(ctx, "drop table json_test")
 		if err != nil {
 			panic(err)
 		}
@@ -198,4 +206,41 @@ func TestPgxInsertBatch(t *testing.T) {
 		t.Error(err)
 	}
 
+}
+
+type JsonTest struct {
+	ID         int      `db:"id"`
+	Attributes JsonAttr `db:"json_attr"`
+}
+
+type JsonAttr struct {
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
+var fs TableDataSet = TableDataSet{
+	Name:   "json_test",
+	Fields: JsonTest{},
+}
+
+func TestJson(t *testing.T) {
+	store := pgxsetup(t)
+	defer pgxteardown(store, t)
+	store.MustExec(NoTx, `insert into json_test values (1,'{"name":"jack","age":8}')`)
+	store.MustExec(NoTx, `insert into json_test values ($1,$2)`, 2, JsonAttr{"Luna", 4})
+	recs := []JsonTest{
+		{3, JsonAttr{"John", 20}},
+		{4, JsonAttr{"Karen", 30}},
+	}
+	err := store.Insert(&fs).Records(recs).Execute()
+	if err != nil {
+		t.Error(err)
+	}
+	//store.MustExec(NoTx, `insert into json_test (id) values (1,'{"n`)
+	dest := []JsonTest{}
+	err = store.Select("select * from json_test").Dest(&dest).Fetch()
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(dest)
 }
