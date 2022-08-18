@@ -15,7 +15,7 @@ type FishingSpot struct {
 func pgxsetup(t *testing.T) DataStore {
 	ctx := context.Background()
 	store := getPgxStore(t)
-	err := Transaction(store, func(tx Tx) {
+	err := store.Transaction(func(tx Tx) {
 		pgxtx := tx.PgxTx()
 		sql := `create table fishing_spots(
 			id serial not null primary key,
@@ -55,7 +55,7 @@ func pgxsetup(t *testing.T) DataStore {
 
 func pgxteardown(store DataStore, t *testing.T) {
 	//ctx := context.Background()
-	err := Transaction(store, func(tx Tx) {
+	err := store.Transaction(func(tx Tx) {
 		store.MustExec(&tx, "drop table fishing_spots")
 		store.MustExec(&tx, "drop table json_test")
 		store.MustExec(&tx, "drop table arrays_test")

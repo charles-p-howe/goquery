@@ -41,8 +41,40 @@ func (sds *RdbmsDataStore) Connection() interface{} {
 	return sds.db.Connection()
 }
 
-func (sds *RdbmsDataStore) Transaction() (Tx, error) {
+func (sds *RdbmsDataStore) NewTransaction() (Tx, error) {
 	return sds.db.Transaction()
+}
+
+func (sds *RdbmsDataStore) Transaction(fn TransactionFunction) (err error) {
+	var tx Tx
+	tx, err = sds.NewTransaction()
+	if err != nil {
+		log.Printf("Unable to start transaction: %s\n", err)
+		return err
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				err = errors.New(x)
+			case error:
+				err = x
+			default:
+				err = errors.New("unknown panic")
+			}
+			txerr := tx.Rollback()
+			if txerr != nil {
+				log.Printf("Unable to rollback from transaction: %s", err)
+			}
+		} else {
+			err = tx.Commit()
+			if err != nil {
+				log.Printf("Unable to commit transaction: %s", err)
+			}
+		}
+	}()
+	fn(tx)
+	return err
 }
 
 func (sds *RdbmsDataStore) Fetch(tx *Tx, qi QueryInput, dest interface{}) error {
@@ -127,7 +159,7 @@ func (sds *RdbmsDataStore) MustExec(tx *Tx, stmt string, params ...interface{}) 
 }
 
 func (sds *RdbmsDataStore) insertNewTrans(ds DataSet, rrecs reflect.Value) error {
-	err := Transaction(sds, func(tx Tx) {
+	err := sds.Transaction(func(tx Tx) {
 		err := sds.insert(ds, rrecs, &tx)
 		if err != nil {
 			panic(err)

@@ -48,7 +48,8 @@ type CsvOpts struct {
 
 type DataStore interface {
 	Connection() interface{}
-	Transaction() (Tx, error)
+	NewTransaction() (Tx, error)
+	Transaction(tf TransactionFunction) error
 	Fetch(tx *Tx, input QueryInput, dest interface{}) error
 	FetchRows(tx *Tx, input QueryInput) (Rows, error)
 	GetJSON(input QueryInput, jo JsonOpts) ([]byte, error)
