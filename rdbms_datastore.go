@@ -21,7 +21,7 @@ func NewRdbmsDataStore(config *RdbmsConfig) (DataStore, error) {
 	case "sqlx":
 		db, err := NewSqlxConnection(config)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Unable to connect to pgx datastore: %s", err))
+			return nil, errors.New(fmt.Sprintf("Unable to connect to sqlx datastore: %s", err))
 		}
 		return &RdbmsDataStore{&db}, nil
 	default:

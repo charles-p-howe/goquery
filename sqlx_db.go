@@ -92,7 +92,7 @@ func (sdb *SqlxDb) Select(dest interface{}, tx *Tx, stmt string, params ...inter
 	if len(params) == 0 {
 		return sqlx.Select(sdb.querier(tx), dest, stmt)
 	}
-	return sqlx.Select(sdb.querier(tx), dest, stmt, params)
+	return sqlx.Select(sdb.querier(tx), dest, stmt, params...)
 }
 
 func (sdb *SqlxDb) Get(dest interface{}, tx *Tx, stmt string, params ...interface{}) error {

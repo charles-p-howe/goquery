@@ -3,7 +3,7 @@ package goquery
 import "fmt"
 
 var oracleDialect = DbDialect{
-	TableExistsStmt: `SELECT count(*) FROM information_schema.tables WHERE  table_schema = $1 AND table_name = $2`,
+	TableExistsStmt: `select count(*) from user_tables where table_name=$1`,
 	Bind: func(field string, i int) string {
 		return fmt.Sprintf(":%s", field)
 	},
