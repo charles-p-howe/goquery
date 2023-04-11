@@ -99,7 +99,7 @@ func (sdb *SqlxDb) Get(dest interface{}, tx *Tx, stmt string, params ...interfac
 	if len(params) == 0 {
 		return sqlx.Get(sdb.querier(tx), dest, stmt)
 	}
-	return sqlx.Get(sdb.querier(tx), dest, stmt, params)
+	return sqlx.Get(sdb.querier(tx), dest, stmt, params...)
 }
 
 func (sdb *SqlxDb) Query(tx *Tx, stmt string, params ...interface{}) (Rows, error) {
