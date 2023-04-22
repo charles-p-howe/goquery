@@ -1,1 +1,16 @@
  - pgx select implementation
+
+
+
+ - docs
+
+ workign with rows
+  - rows
+    Scagit logn
+
+transactions
+
+InsertStmt
+
+updates
+
