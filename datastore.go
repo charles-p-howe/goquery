@@ -1,6 +1,10 @@
 package goquery
 
-import "github.com/jackc/pgconn"
+import (
+	"io"
+
+	"github.com/jackc/pgconn"
+)
 
 type RecordHandler func(interface{}) error
 
@@ -35,7 +39,7 @@ type InsertInput struct {
 
 type JsonOpts struct {
 	ToCamelCase bool
-	ForceArray  bool
+	IsArray     bool
 	DateFormat  string
 	OmitNull    bool
 }
@@ -52,7 +56,7 @@ type DataStore interface {
 	Transaction(tf TransactionFunction) error
 	Fetch(tx *Tx, input QueryInput, dest interface{}) error
 	FetchRows(tx *Tx, input QueryInput) (Rows, error)
-	GetJSON(input QueryInput, jo JsonOpts) ([]byte, error)
+	GetJSON(writer io.Writer, input QueryInput, jo JsonOpts) error
 	GetCSV(input QueryInput, co CsvOpts) (string, error)
 	Select(stmt ...string) *FluentSelect
 	Insert(ds DataSet) *FluentInsert

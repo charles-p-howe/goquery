@@ -1,6 +1,10 @@
 package goquery
 
-import "io"
+import (
+	"bufio"
+	"bytes"
+	"io"
+)
 
 type OutputFormat uint8
 
@@ -15,12 +19,13 @@ type FluentSelect struct {
 	tx           *Tx
 	qi           QueryInput
 	dest         interface{}
-	writer       *io.Writer //for JSON and CSV return types
+	writer       io.Writer //for JSON and CSV return types
 	outputformat OutputFormat
 	toCamelCase  bool
-	forceArray   bool
+	isJsonArray  bool
 	dateFormat   string
 	omitNull     bool
+	rowFunction  RowFunction
 }
 
 func (s *FluentSelect) DataSet(ds DataSet) *FluentSelect {
@@ -64,8 +69,8 @@ func (s *FluentSelect) OmitNull(omitnull bool) *FluentSelect {
 	return s
 }
 
-func (s *FluentSelect) ForceArray(forceArray bool) *FluentSelect {
-	s.forceArray = forceArray
+func (s *FluentSelect) IsJsonArray(isJsonArray bool) *FluentSelect {
+	s.isJsonArray = isJsonArray
 	return s
 }
 
@@ -84,15 +89,20 @@ func (s *FluentSelect) Params(params ...interface{}) *FluentSelect {
 	return s
 }
 
-func (s *FluentSelect) AsJson(writer *io.Writer) *FluentSelect {
+func (s *FluentSelect) OutputJson(writer io.Writer) *FluentSelect {
 	s.writer = writer
 	s.outputformat = JSON
 	return s
 }
 
-func (s *FluentSelect) AsCsv(writer *io.Writer) *FluentSelect {
+func (s *FluentSelect) OutputCsv(writer io.Writer) *FluentSelect {
 	s.writer = writer
 	s.outputformat = CSV
+	return s
+}
+
+func (s *FluentSelect) ForEachRow(rf RowFunction) *FluentSelect {
+	s.rowFunction = rf
 	return s
 }
 
@@ -105,23 +115,28 @@ func (s *FluentSelect) FetchRows() (Rows, error) {
 	return s.store.FetchRows(s.tx, s.qi)
 }
 
-// Deprecated: This method will be removed in the near future.  Use Fetch()
+// Deprecated: This method will be removed in the next version.  Use Fetch()
 func (s *FluentSelect) FetchI() (interface{}, error) {
 	dest := s.qi.DataSet.FieldSlice()
 	error := s.store.Fetch(s.tx, s.qi, dest)
 	return dest, error
 }
 
+// Deprecated: This method will be removed in the next version.  Use Fetch()
 func (s *FluentSelect) FetchJSON() ([]byte, error) {
+	var b bytes.Buffer
+	writer := bufio.NewWriter(&b)
 	jsonOpts := JsonOpts{
 		ToCamelCase: s.toCamelCase,
 		OmitNull:    s.omitNull,
-		ForceArray:  s.forceArray,
+		IsArray:     s.isJsonArray,
 		DateFormat:  s.dateFormat,
 	}
-	return s.store.GetJSON(s.qi, jsonOpts)
+	err := s.store.GetJSON(writer, s.qi, jsonOpts)
+	return b.Bytes(), err
 }
 
+// Deprecated: This method will be removed in the next version.  Use Fetch()
 func (s *FluentSelect) FetchCSV() (string, error) {
 	csvOpts := CsvOpts{
 		ToCamelCase: s.toCamelCase,

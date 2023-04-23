@@ -10,6 +10,8 @@ const selectkey = "select"
 //const updatekey = "update"
 //const insertkey = "insert"
 
+type RowFunction func(r Rows)
+
 type Rows interface {
 	Columns() ([]string, error)
 	ColumnTypes() ([]reflect.Type, error)

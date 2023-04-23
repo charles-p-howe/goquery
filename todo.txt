@@ -1,16 +1,10 @@
- - pgx select implementation
+ - Implement Output CSV
+ - Implement Output JSON
+ - Implement ForEachRow
 
+ - Write documentation
+ - Write unit ToSelectStmt
 
-
- - docs
-
- workign with rows
-  - rows
-    Scagit logn
-
-transactions
-
-InsertStmt
-
-updates
+ - Generics for interface{} return values
+ - Replace interface{} with 'any'
 

@@ -25,7 +25,6 @@ func getSelectStatement(ds DataSet, key string, stmt string, suffix string, appe
 }
 
 func ToSelectStmt(ds DataSet) string {
-	fmt.Println("Building Statement")
 	var fieldsBuilder strings.Builder
 	fieldsBuilder.WriteString("select ")
 	typ := reflect.TypeOf(ds.Attributes())

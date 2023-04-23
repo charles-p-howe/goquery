@@ -3,6 +3,7 @@ package goquery
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"reflect"
 )
@@ -103,17 +104,18 @@ func (sds *RdbmsDataStore) FetchRows(tx *Tx, qi QueryInput) (Rows, error) {
 	return sds.db.Query(tx, sstmt, qi.BindParams...)
 }
 
-func (sds *RdbmsDataStore) GetJSON(qi QueryInput, jo JsonOpts) ([]byte, error) {
+func (sds *RdbmsDataStore) GetJSON(writer io.Writer, qi QueryInput, jo JsonOpts) error {
 	rows, err := sds.FetchRows(nil, qi)
 	if err != nil {
 		log.Println(err)
 		if qi.PanicOnErr {
 			panic(err)
 		}
-		return nil, err
+		return nil
 	}
 	defer rows.Close()
-	return RowsToJSON(rows, jo.ToCamelCase, jo.ForceArray, jo.DateFormat, jo.OmitNull)
+
+	return RowsToJSON(writer, rows, jo.ToCamelCase, jo.IsArray, jo.DateFormat, jo.OmitNull)
 }
 
 func (sds *RdbmsDataStore) GetCSV(qi QueryInput, co CsvOpts) (string, error) {
@@ -219,19 +221,6 @@ func (sds *RdbmsDataStore) Select(stmt ...string) *FluentSelect {
 	s.CamelCase(true)
 	return &s
 }
-
-/*
-func (sds *SqlDataStore) Select(ds DataSet) *FluentSelect {
-	s := FluentSelect{
-		qi: QueryInput{
-			DataSet: ds,
-		},
-		store: sds,
-	}
-	s.CamelCase(true)
-	return &s
-}
-*/
 
 func (sds *RdbmsDataStore) Insert(ds DataSet) *FluentInsert {
 	fi := FluentInsert{
