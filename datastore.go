@@ -12,6 +12,12 @@ type BindParamTemplateFunction func(field string, i int) string
 type SequenceTemplateFunction func(sequence string) string
 type UrlTemplateFunction func(config *RdbmsConfig) string
 
+const (
+	DEST OutputFormat = iota
+	JSON
+	CSV
+)
+
 type DbDialect struct {
 	TableExistsStmt string
 	Bind            BindParamTemplateFunction
@@ -29,6 +35,12 @@ type QueryInput struct {
 	PanicOnErr   bool
 }
 
+type QueryOutput struct {
+	OutputFormat OutputFormat
+	Writer       io.Writer
+	Options      OutputOptions
+}
+
 type InsertInput struct {
 	Dataset    DataSet
 	Records    interface{}
@@ -37,27 +49,22 @@ type InsertInput struct {
 	PanicOnErr bool
 }
 
-type JsonOpts struct {
-	ToCamelCase bool
-	IsArray     bool
-	DateFormat  string
-	OmitNull    bool
-}
-
-type CsvOpts struct {
-	ToCamelCase bool
-	DateFormat  string
-	PrintHeader bool
+type OutputOptions struct {
+	ToCamelCase    bool
+	IsArray        bool
+	DateFormat     string
+	OmitNull       bool
+	CsvPrintHeader bool
 }
 
 type DataStore interface {
 	Connection() interface{}
 	NewTransaction() (Tx, error)
 	Transaction(tf TransactionFunction) error
-	Fetch(tx *Tx, input QueryInput, dest interface{}) error
+	Fetch(tx *Tx, input QueryInput, output QueryOutput, dest interface{}) error
 	FetchRows(tx *Tx, input QueryInput) (Rows, error)
-	GetJSON(writer io.Writer, input QueryInput, jo JsonOpts) error
-	GetCSV(input QueryInput, co CsvOpts) (string, error)
+	GetJSON(writer io.Writer, input QueryInput, jo OutputOptions) error
+	GetCSV(input QueryInput, co OutputOptions) (string, error)
 	Select(stmt ...string) *FluentSelect
 	Insert(ds DataSet) *FluentInsert
 	//InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error

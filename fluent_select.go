@@ -8,24 +8,19 @@ import (
 
 type OutputFormat uint8
 
-const (
-	DEST OutputFormat = iota
-	JSON
-	CSV
-)
-
 type FluentSelect struct {
-	store        DataStore
-	tx           *Tx
-	qi           QueryInput
-	dest         interface{}
-	writer       io.Writer //for JSON and CSV return types
-	outputformat OutputFormat
-	toCamelCase  bool
-	isJsonArray  bool
-	dateFormat   string
-	omitNull     bool
-	rowFunction  RowFunction
+	store DataStore
+	tx    *Tx
+	qi    QueryInput
+	qo    QueryOutput
+	dest  interface{}
+	//writer       io.Writer //for JSON and CSV return types
+	//outputformat OutputFormat
+	//toCamelCase bool
+	//isJsonArray bool
+	//dateFormat  string
+	//omitNull    bool
+	rowFunction RowFunction
 }
 
 func (s *FluentSelect) DataSet(ds DataSet) *FluentSelect {
@@ -50,27 +45,27 @@ func (s *FluentSelect) Apply(vals ...interface{}) *FluentSelect {
 
 func (s *FluentSelect) Dest(dest interface{}) *FluentSelect {
 	s.dest = dest
-	s.outputformat = DEST
+	s.qo.OutputFormat = DEST
 	return s
 }
 
 func (s *FluentSelect) CamelCase(useCamelCase bool) *FluentSelect {
-	s.toCamelCase = useCamelCase
+	s.qo.Options.ToCamelCase = useCamelCase
 	return s
 }
 
 func (s *FluentSelect) DateFormat(dateFormat string) *FluentSelect {
-	s.dateFormat = dateFormat
+	s.qo.Options.DateFormat = dateFormat
 	return s
 }
 
 func (s *FluentSelect) OmitNull(omitnull bool) *FluentSelect {
-	s.omitNull = omitnull
+	s.qo.Options.OmitNull = omitnull
 	return s
 }
 
 func (s *FluentSelect) IsJsonArray(isJsonArray bool) *FluentSelect {
-	s.isJsonArray = isJsonArray
+	s.qo.Options.IsArray = isJsonArray
 	return s
 }
 
@@ -90,14 +85,14 @@ func (s *FluentSelect) Params(params ...interface{}) *FluentSelect {
 }
 
 func (s *FluentSelect) OutputJson(writer io.Writer) *FluentSelect {
-	s.writer = writer
-	s.outputformat = JSON
+	s.qo.Writer = writer
+	s.qo.OutputFormat = JSON
 	return s
 }
 
 func (s *FluentSelect) OutputCsv(writer io.Writer) *FluentSelect {
-	s.writer = writer
-	s.outputformat = CSV
+	s.qo.Writer = writer
+	s.qo.OutputFormat = CSV
 	return s
 }
 
@@ -107,7 +102,7 @@ func (s *FluentSelect) ForEachRow(rf RowFunction) *FluentSelect {
 }
 
 func (s *FluentSelect) Fetch() error {
-	error := s.store.Fetch(s.tx, s.qi, s.dest)
+	error := s.store.Fetch(s.tx, s.qi, s.qo, s.dest)
 	return error
 }
 
@@ -118,7 +113,7 @@ func (s *FluentSelect) FetchRows() (Rows, error) {
 // Deprecated: This method will be removed in the next version.  Use Fetch()
 func (s *FluentSelect) FetchI() (interface{}, error) {
 	dest := s.qi.DataSet.FieldSlice()
-	error := s.store.Fetch(s.tx, s.qi, dest)
+	error := s.store.Fetch(s.tx, s.qi, s.qo, dest)
 	return dest, error
 }
 
@@ -126,22 +121,15 @@ func (s *FluentSelect) FetchI() (interface{}, error) {
 func (s *FluentSelect) FetchJSON() ([]byte, error) {
 	var b bytes.Buffer
 	writer := bufio.NewWriter(&b)
-	jsonOpts := JsonOpts{
-		ToCamelCase: s.toCamelCase,
-		OmitNull:    s.omitNull,
-		IsArray:     s.isJsonArray,
-		DateFormat:  s.dateFormat,
-	}
-	err := s.store.GetJSON(writer, s.qi, jsonOpts)
+
+	err := s.store.GetJSON(writer, s.qi, s.qo.Options)
 	return b.Bytes(), err
 }
 
 // Deprecated: This method will be removed in the next version.  Use Fetch()
+/*
 func (s *FluentSelect) FetchCSV() (string, error) {
-	csvOpts := CsvOpts{
-		ToCamelCase: s.toCamelCase,
-		DateFormat:  s.dateFormat,
-		PrintHeader: true,
-	}
-	return s.store.GetCSV(s.qi, csvOpts)
+
+	return s.store.GetCSV(s.qi, s.qo.Options)
 }
+*/

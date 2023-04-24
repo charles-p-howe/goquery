@@ -78,16 +78,24 @@ func (sds *RdbmsDataStore) Transaction(fn TransactionFunction) (err error) {
 	return err
 }
 
-func (sds *RdbmsDataStore) Fetch(tx *Tx, qi QueryInput, dest interface{}) error {
+func (sds *RdbmsDataStore) Fetch(tx *Tx, qi QueryInput, qo QueryOutput, dest interface{}) error {
 	sstmt, err := getSelectStatement(qi.DataSet, qi.StatementKey, qi.Statement, qi.Suffix, qi.StmtAppends)
 	if err != nil {
 		return err
 	}
 
-	if isSlice(dest) {
-		err = sds.db.Select(dest, tx, sstmt, qi.BindParams...)
-	} else {
-		err = sds.db.Get(dest, tx, sstmt, qi.BindParams...)
+	switch qo.OutputFormat {
+	case JSON:
+		return sds.GetJSON(qo.Writer, qi, qo.Options)
+	case CSV:
+		fmt.Println("CSV") //@TODO fix json
+		//return sds.GetCSV()
+	default:
+		if isSlice(dest) {
+			err = sds.db.Select(dest, tx, sstmt, qi.BindParams...)
+		} else {
+			err = sds.db.Get(dest, tx, sstmt, qi.BindParams...)
+		}
 	}
 
 	if err != nil && qi.PanicOnErr {
@@ -104,7 +112,7 @@ func (sds *RdbmsDataStore) FetchRows(tx *Tx, qi QueryInput) (Rows, error) {
 	return sds.db.Query(tx, sstmt, qi.BindParams...)
 }
 
-func (sds *RdbmsDataStore) GetJSON(writer io.Writer, qi QueryInput, jo JsonOpts) error {
+func (sds *RdbmsDataStore) GetJSON(writer io.Writer, qi QueryInput, jo OutputOptions) error {
 	rows, err := sds.FetchRows(nil, qi)
 	if err != nil {
 		log.Println(err)
@@ -118,7 +126,7 @@ func (sds *RdbmsDataStore) GetJSON(writer io.Writer, qi QueryInput, jo JsonOpts)
 	return RowsToJSON(writer, rows, jo.ToCamelCase, jo.IsArray, jo.DateFormat, jo.OmitNull)
 }
 
-func (sds *RdbmsDataStore) GetCSV(qi QueryInput, co CsvOpts) (string, error) {
+func (sds *RdbmsDataStore) GetCSV(qi QueryInput, co OutputOptions) (string, error) {
 	rows, err := sds.FetchRows(nil, qi)
 	if err != nil {
 		log.Println(err)
