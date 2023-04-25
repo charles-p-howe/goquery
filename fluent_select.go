@@ -9,17 +9,11 @@ import (
 type OutputFormat uint8
 
 type FluentSelect struct {
-	store DataStore
-	tx    *Tx
-	qi    QueryInput
-	qo    QueryOutput
-	dest  interface{}
-	//writer       io.Writer //for JSON and CSV return types
-	//outputformat OutputFormat
-	//toCamelCase bool
-	//isJsonArray bool
-	//dateFormat  string
-	//omitNull    bool
+	store       DataStore
+	tx          *Tx
+	qi          QueryInput
+	qo          QueryOutput
+	dest        interface{}
 	rowFunction RowFunction
 }
 
@@ -121,8 +115,8 @@ func (s *FluentSelect) FetchI() (interface{}, error) {
 func (s *FluentSelect) FetchJSON() ([]byte, error) {
 	var b bytes.Buffer
 	writer := bufio.NewWriter(&b)
-
 	err := s.store.GetJSON(writer, s.qi, s.qo.Options)
+	writer.Flush()
 	return b.Bytes(), err
 }
 
