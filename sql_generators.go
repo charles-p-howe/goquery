@@ -9,17 +9,24 @@ import (
 
 func getSelectStatement(ds DataSet, key string, stmt string, suffix string, appends []interface{}) (string, error) {
 	var ok bool
-	switch {
-	case key != "":
-		if stmt, ok = ds.Commands()[key]; !ok {
-			return "", fmt.Errorf("unable to find statement for %s: %s", ds.Entity(), key)
+	if key != "" || stmt == "" {
+		if ds == nil {
+			return "", errors.New("Missing Dataset when referencing a statement key")
 		}
-	case stmt == "":
-		if stmt, ok = ds.Commands()[selectkey]; !ok {
-			stmt = ToSelectStmt(ds)
-			ds.PutCommand(selectkey, stmt)
+
+		switch {
+		case key != "":
+			if stmt, ok = ds.Commands()[key]; !ok {
+				return "", fmt.Errorf("unable to find statement for %s: %s", ds.Entity(), key)
+			}
+		case stmt == "":
+			if stmt, ok = ds.Commands()[selectkey]; !ok {
+				stmt = ToSelectStmt(ds)
+				ds.PutCommand(selectkey, stmt)
+			}
 		}
 	}
+
 	stmt = fmt.Sprintf("%s %s", stmt, suffix)
 	return fmt.Sprintf(stmt, appends...), nil
 }

@@ -1,6 +1,7 @@
 package goquery
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
@@ -27,10 +28,25 @@ type DataSet interface {
 	PutCommand(key string, stmt string)
 }
 
+type Statements map[string]string
+
+func (s Statements) Get(key string) (string, error) {
+	if val, ok := s[key]; ok {
+		return val, nil
+	}
+	return "", errors.New("Invalid statement")
+}
+func (s Statements) GetOrPanic(key string) string {
+	if val, ok := s[key]; ok {
+		return val
+	}
+	panic(errors.New("Invalid statement"))
+}
+
 type TableDataSet struct {
 	Name       string
 	Schema     string //optional
-	Statements map[string]string
+	Statements Statements
 	Fields     interface{}
 }
 
