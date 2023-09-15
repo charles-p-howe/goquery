@@ -23,8 +23,8 @@ type Rows interface {
 
 type DataSet interface {
 	Entity() string
-	FieldSlice() interface{}
-	Attributes() interface{}
+	FieldSlice() interface{} //@depricated.  Will be removed in the next version
+	Attributes() interface{} //@depricated.  Will be removed in the next version
 	Commands() map[string]string
 	PutCommand(key string, stmt string)
 }
@@ -33,7 +33,7 @@ type TableDataSet struct {
 	Name       string
 	Schema     string //optional
 	Statements map[string]string
-	Fields     interface{}
+	Fields     interface{} //@depricated. Will be removed in the next verison
 }
 
 func (t *TableDataSet) FieldSlice() interface{} {

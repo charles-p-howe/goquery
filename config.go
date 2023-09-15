@@ -18,6 +18,7 @@ type RdbmsConfig struct {
 	Dbport      string
 	Dbname      string
 	ExternalLib string
+	OnInit      string
 	DbDriver    string
 	DbStore     string
 

@@ -104,14 +104,14 @@ func (s *FluentSelect) FetchRows() (Rows, error) {
 	return s.store.FetchRows(s.tx, s.qi)
 }
 
-// Deprecated: This method will be removed in the next version.  Use Fetch()
+// @deprecated: This method will be removed in the next version.  Use Fetch()
 func (s *FluentSelect) FetchI() (interface{}, error) {
 	dest := s.qi.DataSet.FieldSlice()
 	error := s.store.Fetch(s.tx, s.qi, s.qo, dest)
 	return dest, error
 }
 
-// Deprecated: This method will be removed in the next version.  Use Fetch()
+// @deprecated: This method will be removed in the next version.  Use Fetch()
 func (s *FluentSelect) FetchJSON() ([]byte, error) {
 	var b bytes.Buffer
 	writer := bufio.NewWriter(&b)
@@ -120,10 +120,7 @@ func (s *FluentSelect) FetchJSON() ([]byte, error) {
 	return b.Bytes(), err
 }
 
-// Deprecated: This method will be removed in the next version.  Use Fetch()
-/*
+// @deprecated: This method will be removed in the next version.  Use Fetch()
 func (s *FluentSelect) FetchCSV() (string, error) {
-
 	return s.store.GetCSV(s.qi, s.qo.Options)
 }
-*/
