@@ -9,23 +9,29 @@ import (
 
 func getSelectStatement(ds DataSet, key string, stmt string, suffix string, appends []interface{}, dest any) (string, error) {
 	var ok bool
-	switch {
-	case key != "":
-		if stmt, ok = ds.Commands()[key]; !ok {
-			return "", fmt.Errorf("unable to find statement for %s: %s", ds.Entity(), key)
+	if key != "" || stmt == "" {
+		if ds == nil {
+			return "", errors.New("Missing Dataset when referencing a statement key")
 		}
-	case stmt == "":
-		if stmt, ok = ds.Commands()[selectkey]; !ok {
-			if ds.Attributes() != nil {
-				stmt = ToSelectStmtDepricated(ds)
-			} else if dest != nil {
-				stmt = ToSelectStmt(ds, dest)
-			} else {
-				return "", errors.New("unable to build query statement")
+		switch {
+		case key != "":
+			if stmt, ok = ds.Commands()[key]; !ok {
+				return "", fmt.Errorf("unable to find statement for %s: %s", ds.Entity(), key)
 			}
-			ds.PutCommand(selectkey, stmt)
+		case stmt == "":
+			if stmt, ok = ds.Commands()[selectkey]; !ok {
+				if ds.Attributes() != nil {
+					stmt = ToSelectStmtDepricated(ds)
+				} else if dest != nil {
+					stmt = ToSelectStmt(ds, dest)
+				} else {
+					return "", errors.New("unable to build query statement")
+				}
+				ds.PutCommand(selectkey, stmt)
+			}
 		}
 	}
+
 	stmt = fmt.Sprintf("%s %s", stmt, suffix)
 	return fmt.Sprintf(stmt, appends...), nil
 }
