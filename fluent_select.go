@@ -9,12 +9,11 @@ import (
 type OutputFormat uint8
 
 type FluentSelect struct {
-	store       DataStore
-	tx          *Tx
-	qi          QueryInput
-	qo          QueryOutput
-	dest        interface{}
-	rowFunction RowFunction
+	store DataStore
+	tx    *Tx
+	qi    QueryInput
+	qo    QueryOutput
+	dest  interface{}
 }
 
 func (s *FluentSelect) DataSet(ds DataSet) *FluentSelect {
@@ -91,7 +90,7 @@ func (s *FluentSelect) OutputCsv(writer io.Writer) *FluentSelect {
 }
 
 func (s *FluentSelect) ForEachRow(rf RowFunction) *FluentSelect {
-	s.rowFunction = rf
+	s.qo.rowFunction = rf
 	return s
 }
 

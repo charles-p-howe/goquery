@@ -83,25 +83,48 @@ func (sds *RdbmsDataStore) Fetch(tx *Tx, qi QueryInput, qo QueryOutput, dest int
 	if err != nil {
 		return err
 	}
-
-	switch qo.OutputFormat {
-	case JSON:
-		return sds.GetJSON(qo.Writer, qi, qo.Options)
-	case CSV:
-		fmt.Println("CSV") //@TODO fix json
-		//return sds.GetCSV()
-	default:
-		if isSlice(dest) {
-			err = sds.db.Select(dest, tx, sstmt, qi.BindParams...)
-		} else {
-			err = sds.db.Get(dest, tx, sstmt, qi.BindParams...)
+	if qo.rowFunction != nil {
+		rows, err := sds.FetchRows(tx, qi)
+		if err != nil {
+			return err
 		}
-	}
+		defer rows.Close()
+		for rows.Next() {
+			if dest != nil {
+				err := rows.ScanStruct(dest)
+				if err != nil {
+					return err
+				}
+			}
+			err = qo.rowFunction(rows)
+			if err != nil {
+				if qi.PanicOnErr {
+					panic(err)
+				}
+				return err
+			}
+		}
+		return nil
+	} else {
+		switch qo.OutputFormat {
+		case JSON:
+			return sds.GetJSON(qo.Writer, qi, qo.Options)
+		case CSV:
+			return errors.New("CSV is not implemented.")
+			//return sds.GetCSV()
+		default:
+			if isSlice(dest) {
+				err = sds.db.Select(dest, tx, sstmt, qi.BindParams...)
+			} else {
+				err = sds.db.Get(dest, tx, sstmt, qi.BindParams...)
+			}
+		}
 
-	if err != nil && qi.PanicOnErr {
-		panic(err)
+		if err != nil && qi.PanicOnErr {
+			panic(err)
+		}
+		return err
 	}
-	return err
 }
 
 func (sds *RdbmsDataStore) FetchRows(tx *Tx, qi QueryInput) (Rows, error) {

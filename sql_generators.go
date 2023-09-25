@@ -20,7 +20,7 @@ func getSelectStatement(ds DataSet, key string, stmt string, suffix string, appe
 			}
 		case stmt == "":
 			if stmt, ok = ds.Commands()[selectkey]; !ok {
-				if ds.Attributes() != nil {
+				if ds.Fields() != nil {
 					stmt = ToSelectStmtDepricated(ds)
 				} else if dest != nil {
 					stmt = ToSelectStmt(ds, dest)
@@ -61,7 +61,7 @@ func ToSelectStmt(ds DataSet, dest any) string {
 func ToSelectStmtDepricated(ds DataSet) string {
 	var fieldsBuilder strings.Builder
 	fieldsBuilder.WriteString("select ")
-	typ := reflect.TypeOf(ds.Attributes())
+	typ := reflect.TypeOf(ds.Fields())
 	fieldNum := typ.NumField()
 	field := 0
 	for i := 0; i < fieldNum; i++ {
@@ -80,7 +80,7 @@ func ToSelectStmtDepricated(ds DataSet) string {
 func ToInsert(ds DataSet, dialect DbDialect) (string, error) {
 	var fieldBuilder strings.Builder
 	var bindBuilder strings.Builder
-	typ := reflect.TypeOf(ds.Attributes())
+	typ := reflect.TypeOf(ds.Fields())
 	fieldNum := typ.NumField()
 	fieldcount := 0
 	paramcount := 0
@@ -114,7 +114,7 @@ func ToInsert(ds DataSet, dialect DbDialect) (string, error) {
 func ToUpdate(ds DataSet, bindTemplateFunction BindParamTemplateFunction) string {
 	var fieldsBuilder strings.Builder
 	var criteria string
-	typ := reflect.TypeOf(ds.Attributes())
+	typ := reflect.TypeOf(ds.Fields())
 	fieldNum := typ.NumField()
 	field := 0
 	for i := 0; i < fieldNum; i++ {
@@ -134,7 +134,7 @@ func ToUpdate(ds DataSet, bindTemplateFunction BindParamTemplateFunction) string
 }
 
 func IdField(ds DataSet) string {
-	typ := reflect.TypeOf(ds.Attributes())
+	typ := reflect.TypeOf(ds.Fields())
 	fieldNum := typ.NumField()
 	for i := 0; i < fieldNum; i++ {
 		if tagval, ok := typ.Field(i).Tag.Lookup("db"); ok {

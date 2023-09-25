@@ -39,6 +39,7 @@ type QueryOutput struct {
 	OutputFormat OutputFormat
 	Writer       io.Writer
 	Options      OutputOptions
+	rowFunction  RowFunction
 }
 
 type InsertInput struct {
@@ -61,7 +62,7 @@ type DataStore interface {
 	Connection() interface{}
 	NewTransaction() (Tx, error)
 	Transaction(tf TransactionFunction) error
-	Fetch(tx *Tx, input QueryInput, output QueryOutput, dest interface{}) error
+	Fetch(tx *Tx, input QueryInput, output QueryOutput, dest any) error
 	FetchRows(tx *Tx, input QueryInput) (Rows, error)
 	GetJSON(writer io.Writer, input QueryInput, jo OutputOptions) error
 	GetCSV(input QueryInput, co OutputOptions) (string, error)
