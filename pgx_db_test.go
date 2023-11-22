@@ -259,7 +259,6 @@ func TestPgxInsert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
 }
 
 func TestPgxInsertBatch(t *testing.T) {
