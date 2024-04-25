@@ -11,6 +11,7 @@ func TagsAndVals(tag string, data interface{}) ([]string, []interface{}) {
 	fieldNum := val.NumField()
 	tags := make([]string, fieldNum)
 	ia := make([]interface{}, fieldNum)
+	//@TODO add recustion for type encapsulation
 	for i := 0; i < fieldNum; i++ {
 		if tagval, ok := typ.Field(i).Tag.Lookup(tag); ok {
 			tags[i] = tagval
@@ -101,11 +102,23 @@ func StructToIArray(data interface{}) []interface{} {
 				continue
 			}
 		}
-		v := val.Field(i)
-		if v.Kind() == reflect.Pointer && v.IsNil() {
-			ia = append(ia, nil)
-		} else {
-			ia = append(ia, reflect.Indirect(v).Interface())
+		//only add parameters tagged with a db and value that is not empty or "-"
+		if tagval, ok := typ.Field(i).Tag.Lookup("db"); ok {
+			if tagval != "" && tagval != "-" {
+				v := val.Field(i)
+				if v.Kind() == reflect.Pointer && v.IsNil() {
+					ia = append(ia, nil)
+				} else {
+					ia = append(ia, reflect.Indirect(v).Interface())
+				}
+			}
+		}
+		//if field is a struct, recursively traverse it.
+		//most useful for encapulation
+		if typ.Field(i).Type.Kind() == reflect.Struct {
+			v := val.Field(i)
+			embeddedParams := StructToIArray(reflect.Indirect(v).Interface())
+			ia = append(ia, embeddedParams...)
 		}
 	}
 	return ia
