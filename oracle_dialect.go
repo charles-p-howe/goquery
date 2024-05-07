@@ -11,8 +11,8 @@ var oracleDialect = DbDialect{
 		return fmt.Sprintf("nextval('%s')", sequence)
 	},
 	Url: func(config *RdbmsConfig) string {
-		return fmt.Sprintf(`user="%s" password="%s" connectString="%s:%s/%s" libDir="%s"`,
-			config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname, config.ExternalLib)
+		return fmt.Sprintf(`user="%s" password="%s" connectString="%s:%s/%s" libDir="%s" onInit="%s"`,
+			config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname, config.ExternalLib, config.OnInit)
 	},
 }
 
