@@ -33,6 +33,7 @@ type QueryInput struct {
 	BindParams   []interface{}
 	StmtAppends  []interface{}
 	PanicOnErr   bool
+	LogSql       bool
 }
 
 type QueryOutput struct {

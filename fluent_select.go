@@ -67,6 +67,11 @@ func (s *FluentSelect) PanicOnErr(panicOnErr bool) *FluentSelect {
 	return s
 }
 
+func (s *FluentSelect) LogSql(logsql bool) *FluentSelect {
+	s.qi.LogSql = logsql
+	return s
+}
+
 func (s *FluentSelect) Suffix(suffix string) *FluentSelect {
 	s.qi.Suffix = suffix
 	return s

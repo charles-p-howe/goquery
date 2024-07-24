@@ -26,6 +26,8 @@ type RdbmsConfig struct {
 	PoolMinConns        int
 	PoolMaxConnLifetime string //duration string
 	PoolMaxConnIdle     string //duration string
+
+	DbDriverSettings string
 }
 
 func RdbmsConfigFromEnv() *RdbmsConfig {

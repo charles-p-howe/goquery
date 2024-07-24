@@ -83,6 +83,11 @@ func (sds *RdbmsDataStore) Fetch(tx *Tx, qi QueryInput, qo QueryOutput, dest int
 	if err != nil {
 		return err
 	}
+
+	if qi.LogSql {
+		log.Println(sstmt)
+	}
+
 	if qo.rowFunction != nil {
 		rows, err := sds.FetchRows(tx, qi)
 		if err != nil {
