@@ -1,12 +1,22 @@
 package goquery
 
-import "github.com/jackc/pgconn"
+import (
+	"io"
+
+	"github.com/jackc/pgconn"
+)
 
 type RecordHandler func(interface{}) error
 
 type BindParamTemplateFunction func(field string, i int) string
 type SequenceTemplateFunction func(sequence string) string
 type UrlTemplateFunction func(config *RdbmsConfig) string
+
+const (
+	DEST OutputFormat = iota
+	JSON
+	CSV
+)
 
 type DbDialect struct {
 	TableExistsStmt string
@@ -23,6 +33,14 @@ type QueryInput struct {
 	BindParams   []interface{}
 	StmtAppends  []interface{}
 	PanicOnErr   bool
+	LogSql       bool
+}
+
+type QueryOutput struct {
+	OutputFormat OutputFormat
+	Writer       io.Writer
+	Options      OutputOptions
+	rowFunction  RowFunction
 }
 
 type InsertInput struct {
@@ -33,27 +51,22 @@ type InsertInput struct {
 	PanicOnErr bool
 }
 
-type JsonOpts struct {
-	ToCamelCase bool
-	ForceArray  bool
-	DateFormat  string
-	OmitNull    bool
-}
-
-type CsvOpts struct {
-	ToCamelCase bool
-	DateFormat  string
-	PrintHeader bool
+type OutputOptions struct {
+	ToCamelCase    bool
+	IsArray        bool
+	DateFormat     string
+	OmitNull       bool
+	CsvPrintHeader bool
 }
 
 type DataStore interface {
 	Connection() interface{}
 	NewTransaction() (Tx, error)
 	Transaction(tf TransactionFunction) error
-	Fetch(tx *Tx, input QueryInput, dest interface{}) error
+	Fetch(tx *Tx, input QueryInput, output QueryOutput, dest any) error
 	FetchRows(tx *Tx, input QueryInput) (Rows, error)
-	GetJSON(input QueryInput, jo JsonOpts) ([]byte, error)
-	GetCSV(input QueryInput, co CsvOpts) (string, error)
+	GetJSON(writer io.Writer, input QueryInput, jo OutputOptions) error
+	GetCSV(input QueryInput, co OutputOptions) (string, error)
 	Select(stmt ...string) *FluentSelect
 	Insert(ds DataSet) *FluentInsert
 	//InsertRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error

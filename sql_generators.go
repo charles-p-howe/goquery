@@ -7,13 +7,12 @@ import (
 	"strings"
 )
 
-func getSelectStatement(ds DataSet, key string, stmt string, suffix string, appends []interface{}) (string, error) {
+func getSelectStatement(ds DataSet, key string, stmt string, suffix string, appends []interface{}, dest any) (string, error) {
 	var ok bool
 	if key != "" || stmt == "" {
 		if ds == nil {
 			return "", errors.New("Missing Dataset when referencing a statement key")
 		}
-
 		switch {
 		case key != "":
 			if stmt, ok = ds.Commands()[key]; !ok {
@@ -21,7 +20,13 @@ func getSelectStatement(ds DataSet, key string, stmt string, suffix string, appe
 			}
 		case stmt == "":
 			if stmt, ok = ds.Commands()[selectkey]; !ok {
-				stmt = ToSelectStmt(ds)
+				if ds.Fields() != nil {
+					stmt = ToSelectStmtDepricated(ds)
+				} else if dest != nil {
+					stmt = ToSelectStmt(ds, dest)
+				} else {
+					return "", errors.New("unable to build query statement")
+				}
 				ds.PutCommand(selectkey, stmt)
 			}
 		}
@@ -31,11 +36,32 @@ func getSelectStatement(ds DataSet, key string, stmt string, suffix string, appe
 	return fmt.Sprintf(stmt, appends...), nil
 }
 
-func ToSelectStmt(ds DataSet) string {
-	fmt.Println("Building Statement")
+func ToSelectStmt(ds DataSet, dest any) string {
 	var fieldsBuilder strings.Builder
 	fieldsBuilder.WriteString("select ")
-	typ := reflect.TypeOf(ds.Attributes())
+	typ := reflect.TypeOf(dest).Elem()
+	if typ.Kind() == reflect.Slice {
+		typ = typ.Elem()
+	}
+	fieldNum := typ.NumField()
+	field := 0
+	for i := 0; i < fieldNum; i++ {
+		if tagval, ok := typ.Field(i).Tag.Lookup("db"); ok && tagval != "_" {
+			if field > 0 {
+				fieldsBuilder.WriteRune(',')
+			}
+			fieldsBuilder.WriteString(tagval)
+			field++
+		}
+	}
+	fieldsBuilder.WriteString(fmt.Sprintf(" from %s", ds.Entity()))
+	return fieldsBuilder.String()
+}
+
+func ToSelectStmtDepricated(ds DataSet) string {
+	var fieldsBuilder strings.Builder
+	fieldsBuilder.WriteString("select ")
+	typ := reflect.TypeOf(ds.Fields())
 	fieldNum := typ.NumField()
 	field := 0
 	for i := 0; i < fieldNum; i++ {
@@ -54,7 +80,7 @@ func ToSelectStmt(ds DataSet) string {
 func ToInsert(ds DataSet, dialect DbDialect) (string, error) {
 	var fieldBuilder strings.Builder
 	var bindBuilder strings.Builder
-	typ := reflect.TypeOf(ds.Attributes())
+	typ := reflect.TypeOf(ds.Fields())
 	fieldNum := typ.NumField()
 	fieldcount := 0
 	paramcount := 0
@@ -88,7 +114,7 @@ func ToInsert(ds DataSet, dialect DbDialect) (string, error) {
 func ToUpdate(ds DataSet, bindTemplateFunction BindParamTemplateFunction) string {
 	var fieldsBuilder strings.Builder
 	var criteria string
-	typ := reflect.TypeOf(ds.Attributes())
+	typ := reflect.TypeOf(ds.Fields())
 	fieldNum := typ.NumField()
 	field := 0
 	for i := 0; i < fieldNum; i++ {
@@ -108,7 +134,7 @@ func ToUpdate(ds DataSet, bindTemplateFunction BindParamTemplateFunction) string
 }
 
 func IdField(ds DataSet) string {
-	typ := reflect.TypeOf(ds.Attributes())
+	typ := reflect.TypeOf(ds.Fields())
 	fieldNum := typ.NumField()
 	for i := 0; i < fieldNum; i++ {
 		if tagval, ok := typ.Field(i).Tag.Lookup("db"); ok {

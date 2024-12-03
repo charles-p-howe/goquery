@@ -3,6 +3,7 @@ package goquery
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"reflect"
 )
@@ -77,46 +78,83 @@ func (sds *RdbmsDataStore) Transaction(fn TransactionFunction) (err error) {
 	return err
 }
 
-func (sds *RdbmsDataStore) Fetch(tx *Tx, qi QueryInput, dest interface{}) error {
-	sstmt, err := getSelectStatement(qi.DataSet, qi.StatementKey, qi.Statement, qi.Suffix, qi.StmtAppends)
+func (sds *RdbmsDataStore) Fetch(tx *Tx, qi QueryInput, qo QueryOutput, dest interface{}) error {
+	sstmt, err := getSelectStatement(qi.DataSet, qi.StatementKey, qi.Statement, qi.Suffix, qi.StmtAppends, dest)
 	if err != nil {
 		return err
 	}
 
-	if isSlice(dest) {
-		err = sds.db.Select(dest, tx, sstmt, qi.BindParams...)
-	} else {
-		err = sds.db.Get(dest, tx, sstmt, qi.BindParams...)
+	if qi.LogSql {
+		log.Println(sstmt)
 	}
 
-	if err != nil && qi.PanicOnErr {
-		panic(err)
+	if qo.rowFunction != nil {
+		rows, err := sds.FetchRows(tx, qi)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			if dest != nil {
+				err := rows.ScanStruct(dest)
+				if err != nil {
+					return err
+				}
+			}
+			err = qo.rowFunction(rows)
+			if err != nil {
+				if qi.PanicOnErr {
+					panic(err)
+				}
+				return err
+			}
+		}
+		return nil
+	} else {
+		switch qo.OutputFormat {
+		case JSON:
+			return sds.GetJSON(qo.Writer, qi, qo.Options)
+		case CSV:
+			return errors.New("CSV is not implemented.")
+			//return sds.GetCSV()
+		default:
+			if isSlice(dest) {
+				err = sds.db.Select(dest, tx, sstmt, qi.BindParams...)
+			} else {
+				err = sds.db.Get(dest, tx, sstmt, qi.BindParams...)
+			}
+		}
+
+		if err != nil && qi.PanicOnErr {
+			panic(err)
+		}
+		return err
 	}
-	return err
 }
 
 func (sds *RdbmsDataStore) FetchRows(tx *Tx, qi QueryInput) (Rows, error) {
-	sstmt, err := getSelectStatement(qi.DataSet, qi.StatementKey, qi.Statement, qi.Suffix, qi.StmtAppends)
+	sstmt, err := getSelectStatement(qi.DataSet, qi.StatementKey, qi.Statement, qi.Suffix, qi.StmtAppends, nil)
 	if err != nil {
 		return nil, err
 	}
 	return sds.db.Query(tx, sstmt, qi.BindParams...)
 }
 
-func (sds *RdbmsDataStore) GetJSON(qi QueryInput, jo JsonOpts) ([]byte, error) {
+func (sds *RdbmsDataStore) GetJSON(writer io.Writer, qi QueryInput, jo OutputOptions) error {
 	rows, err := sds.FetchRows(nil, qi)
 	if err != nil {
 		log.Println(err)
 		if qi.PanicOnErr {
 			panic(err)
 		}
-		return nil, err
+		return nil
 	}
 	defer rows.Close()
-	return RowsToJSON(rows, jo.ToCamelCase, jo.ForceArray, jo.DateFormat, jo.OmitNull)
+
+	return RowsToJSON(writer, rows, jo.ToCamelCase, jo.IsArray, jo.DateFormat, jo.OmitNull)
 }
 
-func (sds *RdbmsDataStore) GetCSV(qi QueryInput, co CsvOpts) (string, error) {
+func (sds *RdbmsDataStore) GetCSV(qi QueryInput, co OutputOptions) (string, error) {
 	rows, err := sds.FetchRows(nil, qi)
 	if err != nil {
 		log.Println(err)
@@ -219,19 +257,6 @@ func (sds *RdbmsDataStore) Select(stmt ...string) *FluentSelect {
 	s.CamelCase(true)
 	return &s
 }
-
-/*
-func (sds *SqlDataStore) Select(ds DataSet) *FluentSelect {
-	s := FluentSelect{
-		qi: QueryInput{
-			DataSet: ds,
-		},
-		store: sds,
-	}
-	s.CamelCase(true)
-	return &s
-}
-*/
 
 func (sds *RdbmsDataStore) Insert(ds DataSet) *FluentInsert {
 	fi := FluentInsert{

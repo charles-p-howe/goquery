@@ -1,6 +1,6 @@
 # goquery is a small library to simplify commodity database operations.
 
-## Warning: This library is in an experimental phase
+For Postgres databases it wraps pgx and for sql interface db connections it wraps sqlx
 
 ---
 Connecting to a RDBMS:

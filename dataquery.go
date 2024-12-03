@@ -11,6 +11,8 @@ const selectkey = "select"
 //const updatekey = "update"
 //const insertkey = "insert"
 
+type RowFunction func(r Rows) error
+
 type Rows interface {
 	Columns() ([]string, error)
 	ColumnTypes() ([]reflect.Type, error)
@@ -22,8 +24,8 @@ type Rows interface {
 
 type DataSet interface {
 	Entity() string
-	FieldSlice() interface{}
-	Attributes() interface{}
+	FieldSlice() interface{} //@depricated.  Will be removed in the next version...maybe
+	Fields() interface{}     //@depricated.  Will be removed in the next version...maybe
 	Commands() map[string]string
 	PutCommand(key string, stmt string)
 }
@@ -44,20 +46,20 @@ func (s Statements) GetOrPanic(key string) string {
 }
 
 type TableDataSet struct {
-	Name       string
-	Schema     string //optional
-	Statements Statements
-	Fields     interface{}
+	Name        string
+	Schema      string //optional
+	Statements  Statements
+	TableFields any
 }
 
 func (t *TableDataSet) FieldSlice() interface{} {
-	typ := reflect.TypeOf(t.Fields)
+	typ := reflect.TypeOf(t.TableFields)
 	slice := reflect.New(reflect.SliceOf(typ))
 	return slice.Interface()
 }
 
-func (t *TableDataSet) Attributes() interface{} {
-	return t.Fields
+func (t *TableDataSet) Fields() interface{} {
+	return t.TableFields
 }
 
 func (t *TableDataSet) Entity() string {

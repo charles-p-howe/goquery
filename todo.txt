@@ -1,1 +1,10 @@
- - pgx select implementation
+ - Implement Output CSV
+ - Implement Output JSON
+ - Implement ForEachRow
+
+ - Write documentation
+ - Write unit ToSelectStmt
+
+ - Generics for interface{} return values
+ - Replace interface{} with 'any'
+

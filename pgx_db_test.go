@@ -2,8 +2,10 @@ package goquery
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -59,23 +61,6 @@ func pgxteardown(store DataStore, t *testing.T) {
 		store.MustExec(&tx, "drop table fishing_spots")
 		store.MustExec(&tx, "drop table json_test")
 		store.MustExec(&tx, "drop table arrays_test")
-
-		/*
-			pgxtx := tx.PgxTx()
-			_, err := pgxtx.Exec(ctx, "drop table fishing_spots")
-			if err != nil {
-				panic(err)
-			}
-			_, err = pgxtx.Exec(ctx, "drop table json_test")
-			if err != nil {
-				panic(err)
-			}
-
-			_, err = pgxtx.Exec(ctx, "drop table arrays_test")
-			if err != nil {
-				panic(err)
-			}
-		*/
 	})
 	if err != nil {
 		t.Errorf("Failed to teardown test:%s\n", err)
@@ -84,12 +69,10 @@ func pgxteardown(store DataStore, t *testing.T) {
 
 func getPgxStore(t *testing.T) DataStore {
 	config := RdbmsConfigFromEnv()
-	//dialect, _ := getDialect("pgx")
 	db, err := NewPgxConnection(config)
 	if err != nil {
 		t.Errorf("Failed to connect to store:%s\n", err)
 	}
-
 	store := RdbmsDataStore{&db}
 	return &store
 }
@@ -98,7 +81,7 @@ func TestPgxConnection(t *testing.T) {
 	getPgxStore(t)
 }
 
-func TestPgxJson(t *testing.T) {
+func TestPgxJsonDepricated(t *testing.T) {
 	correctResult := `[{"id":1,"location":"Alpine Frove"},{"id":2,"location":"Rivertown"},{"id":3,"location":"Pine Island"},{"id":4,"location":null}]`
 	store := pgxsetup(t)
 	defer pgxteardown(store, t)
@@ -106,11 +89,33 @@ func TestPgxJson(t *testing.T) {
 	json, err := store.
 		Select("select * from fishing_spots").
 		OmitNull(false).
+		IsJsonArray(true).
 		FetchJSON()
 	if err != nil {
 		t.Errorf("Failed JSON Test: %s\n", err)
 	}
 	jsonstring := string(json)
+	if jsonstring != correctResult {
+		t.Errorf("Failed JSON Test: Got %s want %s", jsonstring, correctResult)
+	}
+}
+
+func TestPgxJson(t *testing.T) {
+	correctResult := `[{"id":1,"location":"Alpine Frove"},{"id":2,"location":"Rivertown"},{"id":3,"location":"Pine Island"},{"id":4,"location":null}]`
+	store := pgxsetup(t)
+	defer pgxteardown(store, t)
+
+	builder := strings.Builder{}
+	err := store.
+		Select("select * from fishing_spots").
+		OmitNull(false).
+		IsJsonArray(true).
+		OutputJson(&builder).
+		Fetch()
+	if err != nil {
+		t.Errorf("Failed JSON Test: %s\n", err)
+	}
+	jsonstring := builder.String()
 	if jsonstring != correctResult {
 		t.Errorf("Failed JSON Test: Got %s want %s", jsonstring, correctResult)
 	}
@@ -124,6 +129,7 @@ func TestPgxSlice(t *testing.T) {
 		{1, &ap},
 		{2, &rt},
 		{3, &pi},
+		{4, nil},
 	}
 
 	store := pgxsetup(t)
@@ -131,12 +137,15 @@ func TestPgxSlice(t *testing.T) {
 
 	///////////autogenerate select///////////////////
 	fsTbl := TableDataSet{
-		Name:   "fishing_spots",
-		Fields: FishingSpot{},
+		Name: "fishing_spots",
 	}
 
 	dest := &[]FishingSpot{}
-	err := store.Select().DataSet(&fsTbl).Dest(dest).PanicOnErr(true).Fetch()
+	err := store.Select().
+		DataSet(&fsTbl).
+		Dest(dest).
+		PanicOnErr(true).
+		Fetch()
 	if err != nil {
 		t.Errorf("Failed Slice Test:%s\n", err)
 	}
@@ -146,7 +155,7 @@ func TestPgxSlice(t *testing.T) {
 	}
 
 	/////////////////add select statement///////////
-	stmts := map[string]string{
+	stmts := Statements{
 		"named-select": `select * from fishing_spots`,
 	}
 
@@ -165,7 +174,68 @@ func TestPgxSlice(t *testing.T) {
 	if !reflect.DeepEqual(dest, correctResult) {
 		t.Errorf("Failed Slice Test: Got %v want %v", dest, correctResult)
 	}
+}
 
+func TestPgxRow(t *testing.T) {
+	store := pgxsetup(t)
+	defer pgxteardown(store, t)
+	stmt := "select * from fishing_spots"
+	dest := FishingSpot{}
+	rows, err := store.Select(stmt).FetchRows()
+	if err != nil {
+		t.Errorf("Failed Rows Test:%s\n", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		rows.ScanStruct(&dest)
+		fmt.Println(dest)
+	}
+}
+
+func TestPgxRowFunction(t *testing.T) {
+	store := pgxsetup(t)
+	defer pgxteardown(store, t)
+	stmt := "select * from fishing_spots"
+	dest := FishingSpot{}
+	builder := strings.Builder{}
+	err := store.Select(stmt).
+		ForEachRow(func(row Rows) error {
+			if dest.Location != nil {
+				builder.WriteString(fmt.Sprintf("%d:%s\n", dest.ID, *dest.Location))
+			}
+			return nil
+		}).
+		Dest(&dest).
+		Fetch()
+	if err != nil {
+		t.Errorf("Failed Rows Test:%s\n", err)
+	}
+	fmt.Println(builder.String())
+}
+
+func TestPgxRowFunction2(t *testing.T) {
+	store := pgxsetup(t)
+	defer pgxteardown(store, t)
+	stmt := "select * from fishing_spots"
+	dest := FishingSpot{}
+	builder := strings.Builder{}
+	err := store.Select(stmt).
+		ForEachRow(func(row Rows) error {
+			err := row.ScanStruct(&dest)
+			if err != nil {
+				return err
+			}
+			if dest.Location != nil {
+				builder.WriteString(fmt.Sprintf("%d:%s\n", dest.ID, *dest.Location))
+			}
+			return nil
+		}).
+		Dest(&dest).
+		Fetch()
+	if err != nil {
+		t.Errorf("Failed Rows Test:%s\n", err)
+	}
+	fmt.Println(builder.String())
 }
 
 func TestPgxInsert(t *testing.T) {
@@ -179,8 +249,8 @@ func TestPgxInsert(t *testing.T) {
 	//fs := FishingSpot{10, &l10}
 
 	fsTbl := TableDataSet{
-		Name:   "fishing_spots",
-		Fields: FishingSpot{},
+		Name:        "fishing_spots",
+		TableFields: FishingSpot{},
 	}
 
 	store := pgxsetup(t)
@@ -189,7 +259,6 @@ func TestPgxInsert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
 }
 
 func TestPgxInsertBatch(t *testing.T) {
@@ -211,8 +280,8 @@ func TestPgxInsertBatch(t *testing.T) {
 	}
 
 	fsTbl := TableDataSet{
-		Name:   "fishing_spots",
-		Fields: FishingSpot{},
+		Name:        "fishing_spots",
+		TableFields: FishingSpot{},
 	}
 
 	store := pgxsetup(t)
@@ -231,8 +300,8 @@ type ArrayTest struct {
 }
 
 var at TableDataSet = TableDataSet{
-	Name:   "arrays_test",
-	Fields: ArrayTest{},
+	Name:        "arrays_test",
+	TableFields: ArrayTest{},
 }
 
 func TestPgxArrayInsert(t *testing.T) {
@@ -267,8 +336,8 @@ type JsonAttr struct {
 }
 
 var fs TableDataSet = TableDataSet{
-	Name:   "json_test",
-	Fields: JsonTest{},
+	Name:        "json_test",
+	TableFields: JsonTest{},
 }
 
 func TestJson(t *testing.T) {

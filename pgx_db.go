@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-//@TODO figure out how to handle command tags and then we only need a single Execr interface
+// @TODO figure out how to handle command tags and then we only need a single Execr interface
 type PgxExecr interface {
 	Exec(ctx context.Context, stmt string, params ...interface{}) (pgconn.CommandTag, error)
 }

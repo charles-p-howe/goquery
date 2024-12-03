@@ -4,12 +4,18 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/stoewer/go-strcase"
 )
+
+var comma []byte = []byte(",")
+var openobj []byte = []byte("{")
+var closeobj []byte = []byte("}")
+var openarray []byte = []byte("[")
+var closearray []byte = []byte("]")
 
 type jsonNullString struct {
 	sql.NullString
@@ -94,22 +100,22 @@ var strType = reflect.TypeOf(str)
 var dte time.Time
 var dateType = reflect.TypeOf(dte)
 
-func RowsToJSON(rows Rows, toCamelCase bool, forceArray bool, dateFormat string, omitNull bool) ([]byte, error) {
+func RowsToJSON(builder io.Writer, rows Rows, toCamelCase bool, isArray bool, dateFormat string, omitNull bool) error {
 	columns, err := rows.Columns()
 	if err != nil {
-		return nil, fmt.Errorf("Column error: %v", err)
+		return fmt.Errorf("Column error: %v", err)
 	}
 
 	tt, err := rows.ColumnTypes()
 	if err != nil {
-		return nil, fmt.Errorf("Column type error: %v", err)
+		return fmt.Errorf("Column type error: %v", err)
 	}
 
 	types := make([]reflect.Type, len(tt))
 	for i, tp := range tt {
 		//st := tp.ScanType()
 		if tp == nil {
-			return nil, fmt.Errorf("Scantype is null for column: %v", err)
+			return fmt.Errorf("Scantype is null for column: %v", err)
 		}
 		switch tp {
 		case strType, nullStringType:
@@ -128,14 +134,17 @@ func RowsToJSON(rows Rows, toCamelCase bool, forceArray bool, dateFormat string,
 	}
 
 	values := make([]interface{}, len(tt))
-	var builder strings.Builder
+	//var builder strings.Builder
 	count := 0
 
+	if isArray {
+		builder.Write(openarray)
+	}
 	for rows.Next() {
 		if count > 0 {
-			builder.WriteRune(',')
+			builder.Write(comma)
 		}
-		builder.WriteRune('{')
+		builder.Write(openobj)
 		for i := range values {
 			nv := reflect.New(types[i]) //.Interface()
 			if types[i] == jsonNullTimeType {
@@ -147,32 +156,32 @@ func RowsToJSON(rows Rows, toCamelCase bool, forceArray bool, dateFormat string,
 		}
 		err = rows.Scan(values...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan values: %v", err)
+			return fmt.Errorf("failed to scan values: %v", err)
 		}
 		for i, v := range values {
 			jsonb, err := json.Marshal(v)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			jsons := string(jsonb)
 			if omitNull && jsons == "null" {
 				continue
 			}
 			if i > 0 {
-				builder.WriteRune(',')
+				builder.Write(comma)
 			}
 			fieldName := columns[i]
 			if toCamelCase {
 				fieldName = strcase.LowerCamelCase(fieldName)
 			}
-			builder.WriteString(fmt.Sprintf(`"%s":%s`, fieldName, jsons))
+			builder.Write([]byte(fmt.Sprintf(`"%s":%s`, fieldName, jsons)))
 		}
-		builder.WriteRune('}')
+		builder.Write(closeobj)
 		count++
 	}
-	if count > 1 || forceArray {
-		return []byte("[" + builder.String() + "]"), nil
-	} else {
-		return []byte(builder.String()), nil
+
+	if isArray {
+		builder.Write(closearray)
 	}
+	return nil
 }
