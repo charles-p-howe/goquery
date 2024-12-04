@@ -93,8 +93,11 @@ func StructToIArray(data interface{}) []interface{} {
 		val = val.Elem()
 	}
 	typ := reflect.TypeOf(data)
-	fieldNum := val.NumField()
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
 
+	fieldNum := val.NumField()
 	var ia []interface{}
 	for i := 0; i < fieldNum; i++ {
 		if tagval, ok := typ.Field(i).Tag.Lookup("dbid"); ok {
