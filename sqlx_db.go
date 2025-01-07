@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 
 	"github.com/georgysavva/scany/sqlscan"
@@ -13,6 +14,18 @@ import (
 type SqlRows struct {
 	rows       *sql.Rows
 	rowScanner *sqlscan.RowScanner
+}
+
+type SqlxExecResult struct {
+	res sql.Result
+}
+
+func (ser SqlxExecResult) RowsAffected() int64 {
+	rows, err := ser.res.RowsAffected()
+	if err != nil {
+		log.Println(err)
+	}
+	return rows
 }
 
 func (s *SqlRows) Columns() ([]string, error) {
@@ -108,16 +121,24 @@ func (sdb *SqlxDb) Query(tx *Tx, stmt string, params ...interface{}) (Rows, erro
 }
 
 func (sdb *SqlxDb) Exec(tx *Tx, stmt string, params ...interface{}) error {
-	res, err := sdb.db.Exec(stmt, params...)
-	//@TODO what to do with result?
-	fmt.Println(res)
+	_, err := sdb.db.Exec(stmt, params...)
 	return err
+}
+
+func (sdb *SqlxDb) Execr(tx *Tx, stmt string, params ...interface{}) (ExecResult, error) {
+	res, err := sdb.db.Exec(stmt, params...)
+	return SqlxExecResult{res}, err
 }
 
 func (sdb *SqlxDb) MustExec(tx *Tx, stmt string, params ...interface{}) {
 	res := sdb.db.MustExec(stmt, params...)
 	//@TODO what to do with result?
 	fmt.Println(res)
+}
+
+func (sdb *SqlxDb) MustExecr(tx *Tx, stmt string, params ...interface{}) ExecResult {
+	res := sdb.db.MustExec(stmt, params...)
+	return SqlxExecResult{res}
 }
 
 func (sdb *SqlxDb) Batch() (Batch, error) {

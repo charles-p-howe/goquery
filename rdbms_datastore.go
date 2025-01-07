@@ -143,11 +143,10 @@ func (sds *RdbmsDataStore) FetchRows(tx *Tx, qi QueryInput) (Rows, error) {
 func (sds *RdbmsDataStore) GetJSON(writer io.Writer, qi QueryInput, jo OutputOptions) error {
 	rows, err := sds.FetchRows(nil, qi)
 	if err != nil {
-		log.Println(err)
 		if qi.PanicOnErr {
 			panic(err)
 		}
-		return nil
+		return err
 	}
 	defer rows.Close()
 
@@ -192,8 +191,16 @@ func (sds *RdbmsDataStore) Exec(tx *Tx, stmt string, params ...interface{}) erro
 	return sds.db.Exec(tx, stmt, params...)
 }
 
+func (sds *RdbmsDataStore) Execr(tx *Tx, stmt string, params ...interface{}) (ExecResult, error) {
+	return sds.db.Execr(tx, stmt, params...)
+}
+
 func (sds *RdbmsDataStore) MustExec(tx *Tx, stmt string, params ...interface{}) {
 	sds.db.MustExec(tx, stmt, params...)
+}
+
+func (sds *RdbmsDataStore) MustExecr(tx *Tx, stmt string, params ...interface{}) ExecResult {
+	return sds.db.MustExecr(tx, stmt, params...)
 }
 
 func (sds *RdbmsDataStore) insertNewTrans(ds DataSet, rrecs reflect.Value) error {

@@ -73,7 +73,9 @@ type DataStore interface {
 	InsertRecs(tx *Tx, input InsertInput) error
 	//UpdateRecs(ds DataSet, recs interface{}, batch bool, batchSize int, tx *Tx) error
 	Exec(tx *Tx, stmt string, params ...interface{}) error
+	Execr(tx *Tx, stmt string, params ...interface{}) (ExecResult, error)
 	MustExec(tx *Tx, stmt string, params ...interface{})
+	MustExecr(tx *Tx, stmt string, params ...interface{}) ExecResult
 	//RecordsetIterator(s Select, handler RecordHandler)
 }
 
@@ -84,4 +86,8 @@ type Batch interface {
 type BatchResult interface {
 	Exec() (pgconn.CommandTag, error)
 	Close() error
+}
+
+type ExecResult interface {
+	RowsAffected() int64
 }

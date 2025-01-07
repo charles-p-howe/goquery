@@ -3,7 +3,6 @@ package goquery
 import (
 	"context"
 	"fmt"
-	"log"
 	"reflect"
 	"time"
 
@@ -13,6 +12,14 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
+
+type PgxExecResult struct {
+	res pgconn.CommandTag
+}
+
+func (per PgxExecResult) RowsAffected() int64 {
+	return per.res.RowsAffected()
+}
 
 // @TODO figure out how to handle command tags and then we only need a single Execr interface
 type PgxExecr interface {
@@ -151,20 +158,30 @@ func (pdb *PgxDb) Query(tx *Tx, stmt string, params ...interface{}) (Rows, error
 	return &PgxRows{rows, nil}, err
 }
 
+// @DEPRICATED
 func (pdb *PgxDb) Exec(tx *Tx, stmt string, params ...interface{}) error {
-	ct, err := pdb.execr(tx).Exec(context.Background(), stmt, params...)
-	//@TODO what to do with commnand tag
-	log.Println(ct)
+	_, err := pdb.execr(tx).Exec(context.Background(), stmt, params...)
 	return err
 }
 
-func (pdb *PgxDb) MustExec(tx *Tx, stmt string, params ...interface{}) {
+func (pdb *PgxDb) Execr(tx *Tx, stmt string, params ...interface{}) (ExecResult, error) {
 	ct, err := pdb.execr(tx).Exec(context.Background(), stmt, params...)
-	//@TODO what to do with commnand tag
-	log.Println(ct)
+	return PgxExecResult{ct}, err
+}
+
+func (pdb *PgxDb) MustExec(tx *Tx, stmt string, params ...interface{}) {
+	_, err := pdb.execr(tx).Exec(context.Background(), stmt, params...)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (pdb *PgxDb) MustExecr(tx *Tx, stmt string, params ...interface{}) ExecResult {
+	ct, err := pdb.execr(tx).Exec(context.Background(), stmt, params...)
+	if err != nil {
+		panic(err)
+	}
+	return PgxExecResult{ct}
 }
 
 func (pdb *PgxDb) Batch() (Batch, error) {
