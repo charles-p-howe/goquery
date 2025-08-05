@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // PoolMaxConnLifetime and PoolMaxConnIdle are string time duration representations
@@ -21,6 +22,7 @@ type RdbmsConfig struct {
 	OnInit      string
 	DbDriver    string
 	DbStore     string
+	DbSSLMode   string
 
 	PoolMaxConns        int
 	PoolMinConns        int
@@ -28,6 +30,15 @@ type RdbmsConfig struct {
 	PoolMaxConnIdle     string //duration string
 
 	DbDriverSettings string
+}
+
+var sslModeMap = map[string]string{
+	"disable":     "disable",
+	"allow":       "allow",
+	"prefer":      "prefer",
+	"require":     "require",
+	"verify-ca":   "verify-ca",
+	"verify-full": "verify-full",
 }
 
 func RdbmsConfigFromEnv() *RdbmsConfig {
@@ -40,9 +51,21 @@ func RdbmsConfigFromEnv() *RdbmsConfig {
 	dbConfig.DbDriver = os.Getenv("DBDRIVER")
 	dbConfig.DbStore = os.Getenv("DBSTORE")
 	dbConfig.ExternalLib = os.Getenv("EXTERNAL_LIB")
+	dbConfig.DbSSLMode = os.Getenv("DBSSLMODE")
 
 	if dbConfig.Dbport == "" {
 		dbConfig.Dbport = "5432"
+	}
+
+	if dbConfig.DbSSLMode == "" {
+		dbConfig.DbSSLMode = "disable"
+	} else {
+		if sslMode, ok := sslModeMap[strings.ToLower(dbConfig.DbSSLMode)]; ok {
+			dbConfig.DbSSLMode = sslMode
+		} else {
+			dbConfig.DbSSLMode = "disable"
+			log.Printf("Error parsing DBSSLMODE value of \"%s\":  Will fall back to default DBSSLMODE value.\n", dbConfig.DbSSLMode)
+		}
 	}
 
 	maxConns := os.Getenv("POOLMAXCONNS")
