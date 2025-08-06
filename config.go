@@ -41,7 +41,7 @@ var sslModeMap = map[string]string{
 	"verify-full": "verify-full",
 }
 
-func GetDefaultSSLMode() *string{
+func GetDefaultSSLMode() string{
 	return "disable"
 }
 
