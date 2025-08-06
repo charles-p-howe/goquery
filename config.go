@@ -65,8 +65,8 @@ func RdbmsConfigFromEnv() *RdbmsConfig {
 		if sslMode, ok := sslModeMap[strings.ToLower(dbConfig.DbSSLMode)]; ok {
 			dbConfig.DbSSLMode = sslMode
 		} else {
-			dbConfig.DbSSLMode = defaultSSLMode
 			log.Printf("Error parsing DBSSLMODE value of \"%s\":  Will fall back to default DBSSLMODE value.\n", dbConfig.DbSSLMode)
+			dbConfig.DbSSLMode = defaultSSLMode
 		}
 	}
 
