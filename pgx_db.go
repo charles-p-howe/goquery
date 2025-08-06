@@ -3,6 +3,7 @@ package goquery
 import (
 	"context"
 	"fmt"
+	"log"
 	"reflect"
 	"time"
 
