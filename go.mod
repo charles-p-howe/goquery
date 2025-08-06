@@ -1,4 +1,4 @@
-module github.com/usace/goquery
+module github.com/charles-p-howe/goquery
 
 go 1.18
 
