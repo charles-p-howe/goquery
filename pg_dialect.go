@@ -13,6 +13,7 @@ var pgDialect = DbDialect{
 	Url: func(config *RdbmsConfig) string {
 		if config.DbSSLMode == "" {
 			config.DbSSLMode = defaultSSLMode
+			log.Printf("No sslmode set, will fall back to default DBSSLMODE value %s. Set value in the dbconfig using DbSSLMode \n", defaultSSLMode)
 		}
 		return fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=%s",
 			config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname, config.DbSSLMode)
