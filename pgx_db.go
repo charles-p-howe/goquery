@@ -107,6 +107,9 @@ type PgxDb struct {
 }
 
 func NewPgxConnection(config *RdbmsConfig) (PgxDb, error) {
+	if config.DbSSLMode == "" {
+		config.DbSSLMode = GetDefaultSSLMode()
+	}
 	dburl := fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=%s",
 		config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname, config.DbSSLMode)
 

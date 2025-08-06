@@ -41,6 +41,10 @@ var sslModeMap = map[string]string{
 	"verify-full": "verify-full",
 }
 
+func GetDefaultSSLMode() *string{
+	return "disable"
+}
+
 func RdbmsConfigFromEnv() *RdbmsConfig {
 	dbConfig := new(RdbmsConfig)
 	dbConfig.Dbuser = os.Getenv("DBUSER")
