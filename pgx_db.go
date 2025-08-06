@@ -107,8 +107,12 @@ type PgxDb struct {
 }
 
 func NewPgxConnection(config *RdbmsConfig) (PgxDb, error) {
-	dburl := fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=disable",
-		config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname)
+	if config.DbSSLMode == "" {
+		config.DbSSLMode = defaultSSLMode
+		log.Printf("No sslmode set, will fall back to default DBSSLMODE value %s. Set value in the dbconfig using DbSSLMode \n", defaultSSLMode)
+	}
+	dburl := fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=%s",
+		config.Dbuser, config.Dbpass, config.Dbhost, config.Dbport, config.Dbname, config.DbSSLMode)
 
 	if config.PoolMaxConns > 0 {
 		dburl = fmt.Sprintf("%s %s=%d", dburl, "pool_max_conns", config.PoolMaxConns)
