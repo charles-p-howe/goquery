@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+const defaultSSLMode = "disable"
+
 // PoolMaxConnLifetime and PoolMaxConnIdle are string time duration representations
 // as defined in ParseDuration in the stdlib time package
 // the format consists of decimal numbers, each with optional fraction and a unit suffix,
@@ -39,10 +41,6 @@ var sslModeMap = map[string]string{
 	"require":     "require",
 	"verify-ca":   "verify-ca",
 	"verify-full": "verify-full",
-}
-
-func GetDefaultSSLMode() string{
-	return "disable"
 }
 
 func RdbmsConfigFromEnv() *RdbmsConfig {
